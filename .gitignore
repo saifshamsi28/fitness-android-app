@@ -1,0 +1,89 @@
+# ===============================
+# Android / Gradle
+# ===============================
+*.apk
+*.aab
+*.aar
+*.ap_
+*.dex
+*.class
+
+/build
+**/build/
+
+# ===============================
+# Gradle
+# ===============================
+.gradle/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===============================
+# Local config (DO NOT COMMIT)
+# ===============================
+local.properties
+.env
+.env.*
+secrets.properties
+keystore.properties
+
+# ===============================
+# Android Studio / IntelliJ
+# ===============================
+.idea/
+.idea/**/*
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+out/
+
+# ===============================
+# Logs
+# ===============================
+*.log
+logcat.txt
+
+# ===============================
+# OS Files
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Kotlin / Java
+# ===============================
+*.hprof
+*.orig
+*.rej
+
+# ===============================
+# NDK / CMake
+# ===============================
+.externalNativeBuild/
+.cxx/
+
+# ===============================
+# Fastlane
+# ===============================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# ===============================
+# Keystore files (VERY IMPORTANT)
+# ===============================
+*.jks
+*.keystore
+
+# ===============================
+# Temporary / Cache
+# ===============================
+.cache/
+tmp/
+DOCUMENTATION_INDEX.md
+IMPLEMENTATION_GUIDE.md
+PROJECT_SUMMARY.md
+README.md
+VERIFICATION_CHECKLIST.md
