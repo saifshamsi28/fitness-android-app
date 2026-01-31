@@ -14,7 +14,7 @@
 # ===============================
 # Gradle
 # ===============================
-.gradle/
+../.gradle/
 gradle-app.setting
 !gradle/wrapper/gradle-wrapper.jar
 
