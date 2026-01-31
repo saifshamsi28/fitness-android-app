@@ -10,6 +10,12 @@
 
 /build
 **/build/
+# Gradle
+.gradle/
+build/
+
+# Local config
+local.properties
 
 # ===============================
 # Gradle
@@ -21,7 +27,6 @@ gradle-app.setting
 # ===============================
 # Local config (DO NOT COMMIT)
 # ===============================
-local.properties
 .env
 .env.*
 secrets.properties
