@@ -50,21 +50,30 @@ public class ActivityFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        // Setup SwipeRefreshLayout
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            loadActivities();
-            swipeRefreshLayout.setRefreshing(false);
+        adapter.addLoadStateListener(loadStates -> {
+            boolean isRefreshing =
+                    loadStates.getRefresh() instanceof androidx.paging.LoadState.Loading;
+
+            swipeRefreshLayout.setRefreshing(isRefreshing);
+
+            return null;
         });
 
-        loadActivities();
-    }
 
-    private void loadActivities() {
+        // Setup SwipeRefreshLayout
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            adapter.refresh();
+        });
+
+
         String userId = tokenManager.getUserId();
         if (userId != null) {
-            // Use getActivitiesLiveData instead of getActivities
-            activityViewModel.getActivitiesLiveData(userId).observe(getViewLifecycleOwner(),
-                    pagingData -> adapter.submitData(getViewLifecycleOwner().getLifecycle(), pagingData));
+            activityViewModel.getActivitiesLiveData(userId)
+                    .observe(getViewLifecycleOwner(), pagingData ->
+                            adapter.submitData(getViewLifecycleOwner().getLifecycle(), pagingData));
         }
+
     }
+
+
 }
