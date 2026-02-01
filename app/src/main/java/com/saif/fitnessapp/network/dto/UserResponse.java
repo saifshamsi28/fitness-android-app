@@ -6,8 +6,8 @@ public class UserResponse {
     @SerializedName("id")
     private String id;
 
-    @SerializedName("keyCloakId")
-    private String keyCloakId;
+    @SerializedName("keycloakId")
+    private String keycloakId;
 
     @SerializedName("email")
     private String email;
@@ -26,7 +26,7 @@ public class UserResponse {
 
     // Getters
     public String getId() { return id; }
-    public String getKeyCloakId() { return keyCloakId; }
+    public String getKeycloakId() { return keycloakId; }
     public String getEmail() { return email; }
     public String getFirstName() { return firstName; }
     public String getLastName() { return lastName; }

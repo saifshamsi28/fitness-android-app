@@ -96,18 +96,4 @@ public final class AuthConfig {
     public static final String SCOPES = "openid profile email offline_access";
 
     public static final int API_TIMEOUT_SECONDS = 30;
-
-    // ===============================
-    // DEBUG LOGGING
-    // ===============================
-
-    static {
-        Log.d(TAG, "═══════════════════════════════════════════════════");
-        Log.d(TAG, "Device Type: " + (isEmulator() ? "EMULATOR" : "PHYSICAL DEVICE"));
-        Log.d(TAG, "Keycloak URL: " + KEYCLOAK_BASE_URL);
-        Log.d(TAG, "API URL: " + API_BASE_URL);
-        Log.d(TAG, "Realm: " + REALM);
-        Log.d(TAG, "Client ID: " + CLIENT_ID);
-        Log.d(TAG, "═══════════════════════════════════════════════════");
-    }
 }
