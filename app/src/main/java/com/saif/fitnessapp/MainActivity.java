@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.saif.fitnessapp.ui.TitleController;
 import com.saif.fitnessapp.ui.home.HomeFragment;
 import com.saif.fitnessapp.ui.activity.ActivityFragment;
 import com.saif.fitnessapp.ui.recommendations.RecommendationsFragment;
@@ -15,7 +16,7 @@ import com.saif.fitnessapp.ui.profile.ProfileFragment;
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TitleController {
 
     private BottomNavigationView bottomNavigationView;
     private FragmentManager fragmentManager;
@@ -59,5 +60,22 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void setTitle(String title) {
+        if (getSupportActionBar() == null) {
+            return;
+        }
+        getSupportActionBar().setTitle(title);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (getSupportActionBar() == null) {
+            return;
+        }
+        getSupportActionBar().setTitle("Fitness Tracker");
     }
 }

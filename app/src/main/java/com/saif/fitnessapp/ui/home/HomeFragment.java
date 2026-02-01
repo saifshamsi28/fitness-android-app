@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.auth.TokenManager;
+import com.saif.fitnessapp.ui.TitleController;
 import com.saif.fitnessapp.user.UserViewModel;
 import com.saif.fitnessapp.network.dto.UserResponse;
 
@@ -67,5 +68,13 @@ public class HomeFragment extends Fragment {
                 userEmailText.setText(user.getEmail());
             }
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (requireActivity() instanceof TitleController) {
+            ((TitleController) requireActivity()).setTitle("Fitness Tracker");
+        }
     }
 }

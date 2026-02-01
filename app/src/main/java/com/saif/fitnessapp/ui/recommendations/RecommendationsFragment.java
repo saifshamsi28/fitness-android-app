@@ -13,9 +13,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.saif.fitnessapp.MainActivity;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.auth.TokenManager;
 import com.saif.fitnessapp.recommendation.RecommendationViewModel;
+import com.saif.fitnessapp.ui.TitleController;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -33,6 +35,14 @@ public class RecommendationsFragment extends Fragment {
     private TextView emptyStateText;
     private LinearLayout emptyStateContainer;
     private RecommendationAdapter adapter;
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (requireActivity() instanceof TitleController) {
+            ((TitleController) requireActivity()).setTitle("Recommendations");
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, 

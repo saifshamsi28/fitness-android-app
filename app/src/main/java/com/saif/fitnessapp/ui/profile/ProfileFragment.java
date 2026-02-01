@@ -12,9 +12,11 @@ import android.widget.TextView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.saif.fitnessapp.MainActivity;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.auth.AuthManager;
 import com.saif.fitnessapp.auth.TokenManager;
+import com.saif.fitnessapp.ui.TitleController;
 import com.saif.fitnessapp.ui.auth.LoginActivity;
 import com.saif.fitnessapp.user.UserViewModel;
 
@@ -50,7 +52,6 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         nameText = view.findViewById(R.id.name_text);
         emailText = view.findViewById(R.id.email_text);
         createdAtText = view.findViewById(R.id.created_at_text);
@@ -99,6 +100,14 @@ public class ProfileFragment extends Fragment {
             return output.format(input.parse(isoTime));
         } catch (Exception e) {
             return isoTime;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (requireActivity() instanceof TitleController) {
+            ((TitleController) requireActivity()).setTitle("Profile");
         }
     }
 
