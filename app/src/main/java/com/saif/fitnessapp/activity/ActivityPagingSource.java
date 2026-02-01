@@ -35,29 +35,36 @@ public class ActivityPagingSource
                 ? params.getKey()
                 : STARTING_PAGE_INDEX;
 
-        return Single.fromCallable(() -> {
-            Response<List<ActivityResponse>> response =
-                    apiService.getActivities(pageIndex, PAGE_SIZE, userId)
-                            .execute();
+        return Single
+                .fromCallable(() -> {
+                    Response<List<ActivityResponse>> response =
+                            apiService.getActivities(pageIndex, PAGE_SIZE, userId)
+                                    .execute();
 
-            if (response.isSuccessful() && response.body() != null) {
-                List<ActivityResponse> data = response.body();
+                    if (response.isSuccessful() && response.body() != null) {
+                        List<ActivityResponse> data = response.body();
 
-                Integer prevKey = pageIndex == STARTING_PAGE_INDEX
-                        ? null
-                        : pageIndex - 1;
+                        Integer prevKey = pageIndex == STARTING_PAGE_INDEX
+                                ? null
+                                : pageIndex - 1;
 
-                Integer nextKey = data.isEmpty()
-                        ? null
-                        : pageIndex + 1;
+                        Integer nextKey = data.isEmpty()
+                                ? null
+                                : pageIndex + 1;
 
-                return new LoadResult.Page<>(data, prevKey, nextKey);
-            } else {
-                return new LoadResult.Error<>(
-                        new Exception("API error")
-                );
-            }
-        });
+                        // 👇 EXPLICIT GENERIC TYPES (THIS IS THE FIX)
+                        return new LoadResult.Page<Integer, ActivityResponse>(
+                                data,
+                                prevKey,
+                                nextKey
+                        );
+                    } else {
+                        return new LoadResult.Error<Integer, ActivityResponse>(
+                                new Exception("API error")
+                        );
+                    }
+                })
+                .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io());
     }
 
     @Override

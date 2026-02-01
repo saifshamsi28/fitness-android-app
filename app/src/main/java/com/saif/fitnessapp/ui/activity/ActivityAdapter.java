@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.Objects;
 
 public class ActivityAdapter extends PagingDataAdapter<ActivityResponse, ActivityAdapter.ActivityViewHolder> {
@@ -81,7 +83,24 @@ public class ActivityAdapter extends PagingDataAdapter<ActivityResponse, Activit
             activityType.setText(activity.getActivityType());
             duration.setText(activity.getDuration() + " min");
             calories.setText(activity.getCaloriesBurned() + " kcal");
-            startTime.setText(activity.getStartTime());
+            startTime.setText(formatDateTime(activity.getStartTime()));
         }
     }
+
+    public static String formatDateTime(String isoTime) {
+        try {
+            SimpleDateFormat input = new SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                    Locale.US
+            );
+            SimpleDateFormat output = new SimpleDateFormat(
+                    "dd MMM yyyy, hh:mm a",
+                    Locale.US
+            );
+            return output.format(input.parse(isoTime));
+        } catch (Exception e) {
+            return isoTime;
+        }
+    }
+
 }

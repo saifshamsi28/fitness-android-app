@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.paging.PagingData;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -15,7 +14,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.activity.ActivityViewModel;
 import com.saif.fitnessapp.auth.TokenManager;
-import com.saif.fitnessapp.network.dto.ActivityResponse;
 
 import dagger.hilt.android.AndroidEntryPoint;
 

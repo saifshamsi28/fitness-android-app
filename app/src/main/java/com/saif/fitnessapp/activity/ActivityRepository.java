@@ -30,7 +30,8 @@ public class ActivityRepository {
 
         apiService.trackActivity(request).enqueue(new Callback<ActivityResponse>() {
             @Override
-            public void onResponse(Call<ActivityResponse> call, Response<ActivityResponse> response) {
+            public void onResponse(Call<ActivityResponse> call,
+                                   Response<ActivityResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     liveData.postValue(response.body());
                 } else {
@@ -48,7 +49,9 @@ public class ActivityRepository {
         return liveData;
     }
 
+
     public Flow<PagingData<ActivityResponse>> getActivitiesFlow(String userId) {
+
         return new Pager<>(
                 new PagingConfig(
                         10
