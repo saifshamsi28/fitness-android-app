@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -23,8 +24,11 @@ import dagger.hilt.android.AndroidEntryPoint;
 
 import javax.inject.Inject;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.Locale;
 
 @AndroidEntryPoint
 public class AddActivityFragment extends Fragment {
@@ -37,6 +41,8 @@ public class AddActivityFragment extends Fragment {
     private EditText durationInput;
     private EditText caloriesInput;
     private Button submitButton;
+    private ProgressBar progressBar;
+
 
     private static final String[] ACTIVITY_TYPES = {
             "RUNNING", "SWIMMING", "WALKING", "BOXING", 
@@ -57,6 +63,8 @@ public class AddActivityFragment extends Fragment {
         durationInput = view.findViewById(R.id.duration_input);
         caloriesInput = view.findViewById(R.id.calories_input);
         submitButton = view.findViewById(R.id.submit_button);
+        progressBar = view.findViewById(R.id.progressBar);
+
 
         activityViewModel = new ViewModelProvider(this).get(ActivityViewModel.class);
 
@@ -70,47 +78,76 @@ public class AddActivityFragment extends Fragment {
         activityTypeSpinner.setAdapter(adapter);
 
         submitButton.setOnClickListener(v -> submitActivity());
+
     }
 
     private void submitActivity() {
         String userId = tokenManager.getUserId();
         String activityType = (String) activityTypeSpinner.getSelectedItem();
-        String durationStr = durationInput.getText().toString();
-        String caloriesStr = caloriesInput.getText().toString();
+        String durationStr = durationInput.getText().toString().trim();
+        String caloriesStr = caloriesInput.getText().toString().trim();
 
         if (durationStr.isEmpty() || caloriesStr.isEmpty()) {
             Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        int duration;
+        int calories;
+
         try {
-            int duration = Integer.parseInt(durationStr);
-            int calories = Integer.parseInt(caloriesStr);
-
-            ActivityRequest request = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                request = new ActivityRequest(
-                        userId,
-                        activityType,
-                        duration,
-                        calories,
-                        LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-                        null
-                );
-            }
-
-            activityViewModel.trackActivity(request).observe(getViewLifecycleOwner(), response -> {
-                if (response != null) {
-                    Toast.makeText(requireContext(), "Activity tracked successfully!", 
-                            Toast.LENGTH_SHORT).show();
-                    getParentFragmentManager().popBackStack();
-                } else {
-                    Toast.makeText(requireContext(), "Failed to track activity", 
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            duration = Integer.parseInt(durationStr);
+            calories = Integer.parseInt(caloriesStr);
         } catch (NumberFormatException e) {
             Toast.makeText(requireContext(), "Invalid input", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        // Show loader and diable button
+        progressBar.setVisibility(View.VISIBLE);
+        submitButton.setEnabled(false);
+
+        String startTime;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startTime = LocalDateTime.now()
+                    .format(DateTimeFormatter.ISO_DATE_TIME);
+        } else {
+            startTime = new SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                    Locale.US
+            ).format(new Date());
+
+        }
+
+        ActivityRequest request = new ActivityRequest(
+                userId,
+                activityType,
+                duration,
+                calories,
+                startTime,
+                null
+        );
+
+        activityViewModel.trackActivity(request)
+                .observe(getViewLifecycleOwner(), response -> {
+
+                    // Hide loader and enable button
+                    progressBar.setVisibility(View.GONE);
+                    submitButton.setEnabled(true);
+
+                    if (response != null) {
+                        Toast.makeText(requireContext(),
+                                "Activity tracked successfully!",
+                                Toast.LENGTH_SHORT).show();
+
+                        // Navigate only after success
+                        getParentFragmentManager().popBackStack();
+                    } else {
+                        Toast.makeText(requireContext(),
+                                "Failed to track activity",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
+
 }
