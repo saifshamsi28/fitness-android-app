@@ -52,12 +52,10 @@ public class HomeFragment extends Fragment {
             
             addActivityButton.setOnClickListener(v -> {
                 // Navigate to activity tracking
-                if (getParentFragmentManager() != null) {
-                    getParentFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new AddActivityFragment())
-                            .addToBackStack(null)
-                            .commit();
-                }
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new AddActivityFragment())
+                        .addToBackStack(null)
+                        .commit();
             });
         }
     }

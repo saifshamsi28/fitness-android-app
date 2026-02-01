@@ -434,6 +434,8 @@ public class AuthManager {
 
         // Use custom tab for authorization
         Intent authIntent = authService.getAuthorizationRequestIntent(lastAuthRequest);
+        // Add this to force external browser instead of Chrome Custom Tabs
+        authIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         activity.startActivityForResult(authIntent, 100);
     }
 

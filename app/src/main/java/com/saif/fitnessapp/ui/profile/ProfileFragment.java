@@ -18,6 +18,9 @@ import com.saif.fitnessapp.auth.TokenManager;
 import com.saif.fitnessapp.ui.auth.LoginActivity;
 import com.saif.fitnessapp.user.UserViewModel;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
 import javax.inject.Inject;
@@ -71,7 +74,7 @@ public class ProfileFragment extends Fragment {
             if (user != null) {
                 nameText.setText(user.getFirstName() + " " + user.getLastName());
                 emailText.setText(user.getEmail());
-                createdAtText.setText("Member since: " + user.getCreatedAt());
+                createdAtText.setText("Member since: " + formatDateTime(user.getCreatedAt()));
             }
         });
     }
@@ -82,4 +85,21 @@ public class ProfileFragment extends Fragment {
         startActivity(new Intent(requireContext(), LoginActivity.class));
         requireActivity().finish();
     }
+
+    public String formatDateTime(String isoTime) {
+        try {
+            SimpleDateFormat input = new SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                    Locale.US
+            );
+            SimpleDateFormat output = new SimpleDateFormat(
+                    "dd MMM yyyy, hh:mm a",
+                    Locale.US
+            );
+            return output.format(input.parse(isoTime));
+        } catch (Exception e) {
+            return isoTime;
+        }
+    }
+
 }

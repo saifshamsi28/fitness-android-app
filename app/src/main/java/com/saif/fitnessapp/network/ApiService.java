@@ -15,19 +15,19 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
-    
+
     // User Service APIs
-    @GET("user-service/api/users/{userId}")
+    @GET("api/users/{userId}")
     Call<UserResponse> getUser(@Path("userId") String userId);
 
-    @GET("user-service/api/users/{userId}/validate")
+    @GET("api/users/{userId}/validate")
     Call<Boolean> validateUser(@Path("userId") String userId);
 
     // Activity Service APIs
-    @POST("activity-service/api/activities/track")
+    @POST("api/activities/track")
     Call<ActivityResponse> trackActivity(@Body ActivityRequest request);
 
-    @GET("activity-service/api/activities")
+    @GET("api/activities")
     Call<List<ActivityResponse>> getActivities(
             @Query("page") int page,
             @Query("size") int size,
@@ -35,9 +35,10 @@ public interface ApiService {
     );
 
     // AI Service APIs
-    @GET("ai-service/api/recommendations/user/{userId}")
+    @GET("api/recommendations/user/{userId}")
     Call<List<Recommendation>> getUserRecommendations(@Path("userId") String userId);
 
-    @GET("ai-service/api/recommendations/activity/{activityId}")
+    @GET("api/recommendations/activity/{activityId}")
     Call<Recommendation> getActivityRecommendation(@Path("activityId") String activityId);
 }
+
