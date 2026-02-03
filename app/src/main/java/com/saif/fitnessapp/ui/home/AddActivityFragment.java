@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.activity.ActivityViewModel;
@@ -141,7 +142,8 @@ public class AddActivityFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show();
 
                         // Navigate only after success
-                        getParentFragmentManager().popBackStack();
+                        Navigation.findNavController(requireView()).popBackStack();
+
                     } else {
                         Toast.makeText(requireContext(),
                                 "Failed to track activity",

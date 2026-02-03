@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Fitness Tracker</string>
-    
+
     <!-- Splash Screen -->
     <string name="splash_loading">Loading...</string>
-    
+
     <!-- Login Screen -->
     <string name="login_title">Fitness Tracker</string>
     <string name="login_button">Login with Keycloak</string>
     <string name="login_description">Track your fitness journey with ease</string>
-    
+
     <!-- Home Screen -->
     <string name="welcome_back">Welcome Back!</string>
     <string name="add_activity">Add Activity</string>
     <string name="quick_stats">Quick Stats</string>
-    
+
     <!-- Activity Tracking -->
     <string name="activity_type">Activity Type</string>
     <string name="duration_minutes">Duration (minutes)</string>
@@ -22,25 +22,25 @@
     <string name="submit">Submit</string>
     <string name="activity_tracked">Activity tracked successfully!</string>
     <string name="activity_tracking">Activity Tracking</string>
-    
+
     <!-- Activity History -->
     <string name="activity_history">Activity History</string>
     <string name="no_activities">No activities recorded yet</string>
     <string name="minutes">minutes</string>
     <string name="kcal">kcal</string>
-    
+
     <!-- Recommendations -->
     <string name="recommendations">Recommendations</string>
     <string name="no_recommendations">No recommendations available yet.\nComplete some activities to get personalized recommendations.</string>
     <string name="improvements">Improvements</string>
     <string name="suggestions">Suggestions</string>
     <string name="safety_tips">Safety Tips</string>
-    
+
     <!-- Profile -->
     <string name="profile">Profile</string>
     <string name="logout">Logout</string>
     <string name="member_since">Member since</string>
-    
+
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_activity">Activity</string>

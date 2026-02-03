@@ -9,12 +9,12 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.auth.TokenManager;
 import com.saif.fitnessapp.ui.TitleController;
 import com.saif.fitnessapp.user.UserViewModel;
-import com.saif.fitnessapp.network.dto.UserResponse;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -50,14 +50,12 @@ public class HomeFragment extends Fragment {
         String userId = tokenManager.getUserId();
         if (userId != null) {
             loadUserProfile(userId);
-            
+
             addActivityButton.setOnClickListener(v -> {
-                // Navigate to activity tracking
-                getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new AddActivityFragment())
-                        .addToBackStack(null)
-                        .commit();
+                Navigation.findNavController(v)
+                        .navigate(R.id.action_home_to_addActivity);
             });
+
         }
     }
 
