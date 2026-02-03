@@ -25,6 +25,7 @@ import okhttp3.Response;
  * - Refreshes tokens automatically using refresh token
  * - Handles 401 responses and retries with fresh token
  * - Thread-safe token refresh (prevents multiple simultaneous refreshes)
+ * - Skips authentication for public endpoints (signup, login)
  */
 public class AuthInterceptor implements Interceptor {
     private static final String TAG = "AuthInterceptor";
@@ -91,12 +92,22 @@ public class AuthInterceptor implements Interceptor {
         return response;
     }
 
-    /**
-     * Check if request should skip authentication
-     */
     private boolean shouldSkipAuth(Request request) {
         String url = request.url().toString();
-        // Skip auth for login/token endpoints
+
+        // Skip auth for signup endpoint (NEW)
+        if (url.contains("/api/auth/signup")) {
+            Log.d(TAG, "Skipping auth for signup endpoint");
+            return true;
+        }
+
+        // Skip auth for other auth endpoints
+        if (url.contains("/api/auth/")) {
+            Log.d(TAG, "Skipping auth for auth endpoint");
+            return true;
+        }
+
+        // Skip auth for Keycloak endpoints
         return url.contains("/token") ||
                 url.contains("/auth/realms/") ||
                 url.contains("/protocol/openid-connect");

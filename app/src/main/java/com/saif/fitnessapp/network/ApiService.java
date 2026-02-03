@@ -3,6 +3,8 @@ package com.saif.fitnessapp.network;
 import com.saif.fitnessapp.network.dto.ActivityRequest;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 import com.saif.fitnessapp.network.dto.Recommendation;
+import com.saif.fitnessapp.network.dto.SignupRequest;
+import com.saif.fitnessapp.network.dto.SignupResponse;
 import com.saif.fitnessapp.network.dto.UserResponse;
 
 import java.util.List;
@@ -16,14 +18,20 @@ import retrofit2.http.Query;
 
 public interface ApiService {
 
-    // User Service APIs
+    // --- AUTH SERVICE APIs ---
+    @POST("api/auth/signup")
+    Call<SignupResponse> signup(@Body SignupRequest request);
+
+    // --- USER SERVICE APIs ---
+
     @GET("api/users/{userId}")
     Call<UserResponse> getUser(@Path("userId") String userId);
 
     @GET("api/users/{userId}/validate")
     Call<Boolean> validateUser(@Path("userId") String userId);
 
-    // Activity Service APIs
+    // --- ACTIVITY SERVICE APIs ---
+
     @POST("api/activities/track")
     Call<ActivityResponse> trackActivity(@Body ActivityRequest request);
 
@@ -34,11 +42,11 @@ public interface ApiService {
             @Query("userId") String userId
     );
 
-    // AI Service APIs
+    // --- AI SERVICE APIs ---
+
     @GET("api/recommendations/user/{userId}")
     Call<List<Recommendation>> getUserRecommendations(@Path("userId") String userId);
 
     @GET("api/recommendations/activity/{activityId}")
     Call<Recommendation> getActivityRecommendation(@Path("activityId") String activityId);
 }
-
