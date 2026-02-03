@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.saif.fitnessapp.ui.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_home_to_addActivity"
+            app:destination="@id/addActivityFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_activity"
+        android:name="com.saif.fitnessapp.ui.activity.ActivityFragment"
+        android:label="Activities"
+        tools:layout="@layout/fragment_activity">
+
+        <action
+            android:id="@+id/action_activityFragment_to_activityDetailFragment"
+            app:destination="@id/activityDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <!-- ✅ THIS WAS MISSING — YOU MUST ADD IT -->
+    <fragment
+        android:id="@+id/addActivityFragment"
+        android:name="com.saif.fitnessapp.ui.home.AddActivityFragment"
+        android:label="Add Activity"
+        tools:layout="@layout/fragment_add_activity"/>
+
+    <fragment
+        android:id="@+id/activityDetailFragment"
+        android:name="com.saif.fitnessapp.ui.activity.ActivityDetailFragment"
+        android:label="Activity Details"
+        tools:layout="@layout/fragment_activity_detail">
+
+        <argument
+            android:name="activity_id"
+            app:argType="string" />
+        <argument
+            android:name="activity_type"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="duration"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <argument
+            android:name="calories"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <argument
+            android:name="start_time"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_recommendations"
+        android:name="com.saif.fitnessapp.ui.recommendations.RecommendationsFragment"
+        android:label="Recommendations"
+        tools:layout="@layout/fragment_recommendations" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.saif.fitnessapp.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+</navigation>
