@@ -1,160 +1,9 @@
-//package com.saif.fitnessapp.ui.auth;
-
-//import android.content.Intent;
-//import android.os.Bundle;
-//import android.widget.Button;
-//import android.widget.Toast;
-//
-//import androidx.appcompat.app.AppCompatActivity;
-//
-//import com.saif.fitnessapp.MainActivity;
-//import com.saif.fitnessapp.R;
-//import com.saif.fitnessapp.auth.AuthManager;
-//import com.saif.fitnessapp.auth.TokenManager;
-//
-//import dagger.hilt.android.AndroidEntryPoint;
-//
-//import javax.inject.Inject;
-
-//@AndroidEntryPoint
-//public class LoginActivity extends AppCompatActivity {
-//
-//    @Inject
-//    AuthManager authManager;
-//
-//    @Inject
-//    TokenManager tokenManager;
-//
-//    private Button loginButton;
-//
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_login);
-//
-//        loginButton = findViewById(R.id.login_button);
-//
-//        loginButton.setOnClickListener(v -> {
-//            Intent loginIntent = authManager.getLoginIntent();
-//            startActivity(loginIntent);
-//        });
-//    }
-//
-//    @Override
-//    protected void onNewIntent(Intent intent) {
-//        super.onNewIntent(intent);
-//        handleAuthCallback(intent);
-//    }
-//
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        // Check if user has logged in via the browser
-//        if (tokenManager.isLoggedIn()) {
-//            navigateToMain();
-//        }
-//    }
-//
-//    private void handleAuthCallback(Intent intent) {
-//        if (intent != null && intent.getData() != null) {
-//            String authorizationCode = intent.getData().getQueryParameter("code");
-//
-//            if (authorizationCode != null) {
-//                // Exchange code for token (you'll need to provide your Keycloak client secret)
-//                authManager.exchangeCodeForToken(authorizationCode, "YOUR_CLIENT_SECRET",
-//                    new AuthManager.AuthTokenCallback() {
-//                        @Override
-//                        public void onSuccess(String userId) {
-//                            navigateToMain();
-//                        }
-//
-//                        @Override
-//                        public void onError(String error) {
-//                            Toast.makeText(LoginActivity.this, "Login failed: " + error,
-//                                    Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
-//            }
-//        }
-//    }
-//
-//    private void navigateToMain() {
-//        startActivity(new Intent(this, MainActivity.class));
-//        finish();
-//    }
-//}
-
-//package com.saif.fitnessapp.ui.auth;
-//
-//import android.content.Intent;
-//import android.os.Bundle;
-//import android.util.Log;
-//import android.widget.Toast;
-//
-//import androidx.appcompat.app.AppCompatActivity;
-//
-//import com.saif.fitnessapp.MainActivity;
-//import com.saif.fitnessapp.R;
-//import com.saif.fitnessapp.auth.AuthManager;
-//
-//import javax.inject.Inject;
-//
-//import dagger.hilt.android.AndroidEntryPoint;
-//
-//@AndroidEntryPoint
-//public class LoginActivity extends AppCompatActivity {
-//
-//    @Inject
-//    AuthManager authManager;
-//
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_login);
-//
-//        findViewById(R.id.login_button).setOnClickListener(v ->
-//                authManager.startLogin(this)
-//        );
-//
-//        handleIntent(getIntent());
-//    }
-//
-//    @Override
-//    protected void onNewIntent(Intent intent) {
-//        super.onNewIntent(intent);
-//        handleIntent(intent);
-//    }
-//
-//    private void handleIntent(Intent intent) {
-//
-//        if (intent == null || intent.getData() == null) {
-//            Log.d("LoginActivity", "No intent data,intent is null");
-//            return; // NORMAL launch, ignore
-//        }
-//
-//        authManager.handleAuthResponse(intent, new AuthManager.AuthCallback() {
-//            @Override
-//            public void onSuccess() {
-//                Log.d("LoginActivity", "Login successful");
-//                startActivity(new Intent(LoginActivity.this, MainActivity.class));
-//                finish();
-//            }
-//
-//            @Override
-//            public void onError(String error) {
-//                Log.e("LoginActivity", "Login failed: " + error);
-//                Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
-//            }
-//        });
-//    }
-//
-//}
-
 package com.saif.fitnessapp.ui.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -181,6 +30,9 @@ public class LoginActivity extends AppCompatActivity {
     @Inject
     TokenManager tokenManager;
 
+    private Button loginButton;
+    private Button signupButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -196,13 +48,48 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
 
-        findViewById(R.id.login_button).setOnClickListener(v -> {
+        // Initialize views
+        loginButton = findViewById(R.id.login_button);
+        signupButton = findViewById(R.id.signup_button);
+
+        // Setup click listeners
+        loginButton.setOnClickListener(v -> {
             Log.d(TAG, "Login button clicked");
             authManager.startLogin(this);
         });
 
+        signupButton.setOnClickListener(v -> {
+            Log.d(TAG, "Signup button clicked");
+            navigateToSignup();
+        });
+
+        // Handle auto-login after signup
+        handleAutoLogin();
+
         // Handle the intent if this activity was launched with intent data
         handleIntent(getIntent());
+    }
+
+    private void navigateToSignup() {
+        Intent intent = new Intent(this, SignupActivity.class);
+        startActivity(intent);
+    }
+
+    /**
+     * Handle auto-login after successful signup
+     * SignupActivity will pass AUTO_LOGIN flag
+     */
+    private void handleAutoLogin() {
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("AUTO_LOGIN", false)) {
+            String email = intent.getStringExtra("EMAIL");
+            Log.d(TAG, "Auto-login requested for: " + email);
+            Toast.makeText(this, "Please login with your new account", Toast.LENGTH_LONG).show();
+
+            // Automatically trigger login
+            // User will need to enter credentials in Keycloak login page
+            authManager.startLogin(this);
+        }
     }
 
     @Override
@@ -236,7 +123,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (intent.getData() == null) {
-            Log.d(TAG, "No intent data, intent is null");
+            Log.d(TAG, "No intent data");
             return; // Normal launch, not a redirect
         }
 
