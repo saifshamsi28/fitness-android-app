@@ -131,6 +131,9 @@ dependencies {
     // Shimmer Loading
     implementation("com.facebook.shimmer:shimmer:0.5.0")
 
+    implementation("com.airbnb.android:lottie:6.7.1")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     // Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")

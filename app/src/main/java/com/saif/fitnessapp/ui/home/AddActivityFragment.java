@@ -1,5 +1,7 @@
 package com.saif.fitnessapp.ui.home;
 
+import static java.lang.Math.round;
+
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -29,7 +31,10 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 
 @AndroidEntryPoint
 public class AddActivityFragment extends Fragment {
@@ -46,7 +51,7 @@ public class AddActivityFragment extends Fragment {
 
 
     private static final String[] ACTIVITY_TYPES = {
-            "RUNNING", "SWIMMING", "WALKING", "BOXING", 
+            "RUNNING", "SWIMMING", "WALKING", "BOXING", "CYCLING",
             "WEIGHT_LIFTING", "CARDIO", "STRETCHING", "YOGA"
     };
 
@@ -119,6 +124,8 @@ public class AddActivityFragment extends Fragment {
             ).format(new Date());
 
         }
+        Map<String, Object> additionalMetrics =
+                generateAdditionalMetrics(activityType, duration, calories);
 
         ActivityRequest request = new ActivityRequest(
                 userId,
@@ -126,7 +133,7 @@ public class AddActivityFragment extends Fragment {
                 duration,
                 calories,
                 startTime,
-                null
+                additionalMetrics
         );
 
         activityViewModel.trackActivity(request)
@@ -151,5 +158,91 @@ public class AddActivityFragment extends Fragment {
                     }
                 });
     }
+
+    private Map<String, Object> generateAdditionalMetrics(
+            String activityType,
+            int duration,
+            int calories
+    ) {
+        Map<String, Object> metrics = new HashMap<>();
+        Random random = new Random();
+
+        switch (activityType) {
+
+            case "RUNNING":
+                double distanceKm = round(duration * (0.12 + random.nextDouble() * 0.04), 2); // 0.12-0.16 km/min
+                double avgSpeed = round((distanceKm / duration) * 60, 2); // km/hr
+                int steps = random.nextInt(2000) + (duration * 120); // 120–140 steps/min approx
+
+                metrics.put("distanceKm", distanceKm);
+                metrics.put("avgSpeedKmh", avgSpeed);
+                metrics.put("estimatedSteps", steps);
+                metrics.put("cadenceSpm", 150 + random.nextInt(30)); // steps per minute
+                break;
+
+            case "WALKING":
+                double walkDistance = round(duration * (0.06 + random.nextDouble() * 0.02), 2);
+                int walkSteps = random.nextInt(1000) + (duration * 90);
+
+                metrics.put("distanceKm", walkDistance);
+                metrics.put("estimatedSteps", walkSteps);
+                metrics.put("paceMinPerKm", round(duration / walkDistance, 2));
+                break;
+
+            case "CYCLING":
+                double rideDistance = round(duration * (0.25 + random.nextDouble() * 0.15), 2);
+                int avgPower = 120 + random.nextInt(120); // 120–240 watts
+
+                metrics.put("distanceKm", rideDistance);
+                metrics.put("avgSpeedKmh", round((rideDistance / duration) * 60, 2));
+                metrics.put("estimatedPowerWatts", avgPower);
+                break;
+
+            case "SWIMMING":
+                int laps = random.nextInt(10) + (duration / 2);
+                metrics.put("laps", laps);
+                metrics.put("avgStrokeRate", 30 + random.nextInt(20));
+                metrics.put("distanceMeters", laps * 25);
+                break;
+
+            case "WEIGHT_LIFTING":
+                metrics.put("sets", 3 + random.nextInt(3));      // 3–5
+                metrics.put("repsPerSet", 8 + random.nextInt(5)); // 8–12
+                metrics.put("estimatedLoadKg", 40 + random.nextInt(40)); // 40–80 kg
+                break;
+
+            case "CARDIO":
+                metrics.put("avgHeartRate", 120 + random.nextInt(40));
+                metrics.put("intensityScore", 6 + random.nextInt(4));
+                metrics.put("estimatedVo2Score", 35 + random.nextInt(15));
+                break;
+
+            case "BOXING":
+                metrics.put("punchesThrown", random.nextInt(200) + (duration * 10));
+                metrics.put("rounds", 1 + random.nextInt(3));
+                metrics.put("avgIntensity", 7 + random.nextInt(3));
+                break;
+
+            case "STRETCHING":
+            case "YOGA":
+                metrics.put("flexibilityScore", 60 + random.nextInt(25));
+                metrics.put("breathingScore", 70 + random.nextInt(20));
+                metrics.put("mindfulnessScore", 65 + random.nextInt(25));
+                break;
+
+            default:
+                metrics.put("confidenceScore", 70 + random.nextInt(20));
+                break;
+        }
+
+        return metrics;
+    }
+
+    private double round(double value, int places) {
+        double scale = Math.pow(10, places);
+        return Math.round(value * scale) / scale;
+    }
+
+
 
 }
