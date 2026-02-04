@@ -35,7 +35,6 @@
             app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
-    <!-- ✅ THIS WAS MISSING — YOU MUST ADD IT -->
     <fragment
         android:id="@+id/addActivityFragment"
         android:name="com.saif.fitnessapp.ui.home.AddActivityFragment"
@@ -50,6 +49,7 @@
 
         <argument
             android:name="activity_id"
+
             app:argType="string" />
         <argument
             android:name="activity_type"

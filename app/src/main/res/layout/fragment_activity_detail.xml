@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@color/background">
+    android:background="@color/background"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,75 +13,76 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- ==================== HERO HEADER CARD ==================== -->
+        <!-- 1. HERO CARD (Top) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/hero_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/primary">
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="20dp">
 
-                <!-- Activity Type (Large, Bold) -->
-                <TextView
-                    android:id="@+id/activity_type_header"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Running"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- Metrics Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:layout_marginStart="16dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/activity_type_header"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        tools:text="Running" />
+                    <TextView
+                        android:id="@+id/intensity_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/primary"/>
 
-                    <ImageView
-                        android:id="@+id/activity_icon"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:padding="8dp"
-                        android:background="@drawable/circular_bg"
-                        android:src="@drawable/ic_activity"
-                        />
+                </LinearLayout>
+
+
+
+                <!-- Duration and Calories Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
 
                     <!-- Duration -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Duration"
                             android:textSize="12sp"
-                            android:textColor="@android:color/white"
-                            android:alpha="0.8" />
+                            android:textColor="@color/text_secondary" />
 
                         <TextView
                             android:id="@+id/duration_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="30 min"
-                            android:textSize="20sp"
+                            android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="@android:color/white"
-                            android:layout_marginTop="4dp" />
+                            android:textColor="@color/text_primary"
+                            android:layout_marginTop="4dp"
+                            tools:text="30 min" />
                     </LinearLayout>
 
                     <!-- Calories -->
@@ -88,50 +90,131 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                        android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Calories"
                             android:textSize="12sp"
-                            android:textColor="@android:color/white"
-                            android:alpha="0.8" />
+                            android:textColor="@color/text_secondary" />
 
                         <TextView
                             android:id="@+id/calories_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="250 kcal"
-                            android:textSize="20sp"
+                            android:textSize="18sp"
                             android:textStyle="bold"
-                            android:textColor="@android:color/white"
-                            android:layout_marginTop="4dp" />
+                            android:textColor="@color/primary"
+                            android:layout_marginTop="4dp"
+                            tools:text="250 kcal" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Start Time -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Started"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/start_time_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginTop="4dp"
+                        tools:text="05 Jan 2024, 06:30 AM" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 2. LOTTIE LOADING ANIMATION -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/lottie_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center">
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottie_animation"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/running" />
+
                 <TextView
-                    android:id="@+id/start_time_value"
+                    android:id="@+id/lottie_loading_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="15 Jan 2025, 07:30 AM"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/white"
-                    android:alpha="0.9"
+                    android:text="Generating personalized insights... 🧠"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:textAlignment="center"
                     android:layout_marginTop="16dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ==================== METRICS SECTION ==================== -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/metrics_card"
+        <!-- 3. METRICS GRID (2 columns) -->
+        <LinearLayout
+            android:id="@+id/metrics_grid_linear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Metrics"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Metrics will be added dynamically in a GridLayout-like structure -->
+            <GridLayout
+                android:id="@+id/metrics_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:rowCount="3"
+                android:useDefaultMargins="true">
+                <!-- Metric cards added programmatically -->
+            </GridLayout>
+        </LinearLayout>
+
+        <!-- 4. CHART CARD -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/chart_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardUseCompatPadding="true"
+            tools:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -140,158 +223,115 @@
                 android:padding="16dp">
 
                 <TextView
-                    android:id="@+id/metrics_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Additional Metrics"
-                    android:textSize="18sp"
+                    android:text="Calorie Burn Analysis"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:layout_marginBottom="12dp" />
 
-                <LinearLayout
-                    android:id="@+id/metrics_container"
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/calories_chart"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <!-- Metrics will be added dynamically -->
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/no_metrics_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No additional metrics available"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:visibility="gone" />
+                    android:layout_height="220dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ==================== LOADING ANIMATION ==================== -->
-        <LinearLayout
-            android:id="@+id/loading_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="32dp"
-            android:visibility="visible">
-
-            <ProgressBar
-                android:id="@+id/loading_progress"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:indeterminateTint="@color/primary" />
-
-            <TextView
-                android:id="@+id/loading_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Analyzing your run with AI... 🧠🏃‍♂️"
-                android:textSize="16sp"
-                android:textColor="@color/text_primary"
-                android:textAlignment="center"
-                android:layout_marginTop="16dp" />
-        </LinearLayout>
-
-        <!-- ==================== AI RECOMMENDATION SECTION ==================== -->
+        <!-- 5. AI RECOMMENDATION CARD -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/recommendation_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
             app:cardElevation="2dp"
-            android:visibility="gone">
+            app:cardUseCompatPadding="true"
+            tools:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <!-- Title -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="👉 AI Insights for this Activity"
-                    android:textSize="20sp"
+                    android:text="🤖 AI Recommendation"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="@color/primary"
-                    android:layout_marginBottom="16dp" />
+                    android:textColor="@color/text_primary" />
 
                 <!-- Main Recommendation -->
                 <TextView
                     android:id="@+id/recommendation_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Great job on this activity! Your performance shows excellent progress."
-                    android:textSize="16sp"
+                    android:layout_marginTop="12dp"
+                    android:textSize="14sp"
                     android:textColor="@color/text_primary"
-                    android:lineSpacingMultiplier="1.3"
-                    android:layout_marginBottom="16dp" />
+                    android:lineSpacingExtra="4dp"
+                    tools:text="Great pace! Your endurance is improving steadily." />
 
                 <!-- Improvements Section -->
                 <TextView
+                    android:id="@+id/improvements_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Improvements"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp" />
 
                 <LinearLayout
                     android:id="@+id/improvements_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginBottom="16dp">
-                    <!-- Bullet points added dynamically -->
-                </LinearLayout>
+                    android:layout_marginTop="8dp" />
 
                 <!-- Suggestions Section -->
                 <TextView
+                    android:id="@+id/suggestions_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Suggestions"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp" />
 
                 <LinearLayout
                     android:id="@+id/suggestions_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginBottom="16dp">
-                    <!-- Bullet points added dynamically -->
-                </LinearLayout>
+                    android:layout_marginTop="8dp" />
 
-                <!-- Safety Tips Section -->
+                <!-- Safety Section -->
                 <TextView
+                    android:id="@+id/safety_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Safety Tips"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp" />
 
                 <LinearLayout
                     android:id="@+id/safety_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <!-- Bullet points added dynamically -->
-                </LinearLayout>
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- ==================== ERROR STATE ==================== -->
+        <!-- ERROR STATE -->
         <LinearLayout
             android:id="@+id/error_container"
             android:layout_width="match_parent"
@@ -299,15 +339,23 @@
             android:orientation="vertical"
             android:gravity="center"
             android:padding="32dp"
-            android:visibility="gone">
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️"
+                android:textSize="48sp" />
 
             <TextView
                 android:id="@+id/error_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Failed to load AI insights"
+                android:text="Failed to load recommendation"
                 android:textSize="16sp"
                 android:textColor="@color/text_secondary"
+                android:layout_marginTop="16dp"
                 android:textAlignment="center" />
         </LinearLayout>
 

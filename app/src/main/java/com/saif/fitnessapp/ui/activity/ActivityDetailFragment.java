@@ -1,11 +1,16 @@
 package com.saif.fitnessapp.ui.activity;
 
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.GridLayout;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,12 +19,21 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.airbnb.lottie.LottieAnimationView;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.google.android.material.card.MaterialCardView;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 import com.saif.fitnessapp.network.dto.Recommendation;
 import com.saif.fitnessapp.ui.TitleController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,27 +48,33 @@ public class ActivityDetailFragment extends Fragment {
     private static final String ARG_CALORIES = "calories";
     private static final String ARG_START_TIME = "start_time";
 
-    // UI Components
+    // UI Components - Hero Card
     private TextView activityTypeText;
+    private TextView intensityBadge;
     private TextView durationText;
     private TextView caloriesText;
     private TextView startTimeText;
+
+    // Lottie Animation
+    private MaterialCardView lottieCard;
+    private LottieAnimationView lottieAnimation;
+    private TextView lottieLoadingText;
+
+    // Metrics Grid
     private LinearLayout metricsContainer;
-    private TextView metricsTitle;
-    private TextView noMetricsText;
-    
+    private GridLayout metricsGrid;
+
+    // Chart
+    private MaterialCardView chartCard;
+    private LineChart caloriesChart;
+
     // AI Recommendation Section
     private MaterialCardView recommendationCard;
     private TextView recommendationText;
     private LinearLayout improvementsContainer;
     private LinearLayout suggestionsContainer;
     private LinearLayout safetyContainer;
-    
-    // Loading Animation
-    private LinearLayout loadingContainer;
-    private ProgressBar loadingProgress;
-    private TextView loadingText;
-    
+
     // Error State
     private LinearLayout errorContainer;
     private TextView errorText;
@@ -62,12 +82,17 @@ public class ActivityDetailFragment extends Fragment {
     private ActivityDetailViewModel viewModel;
     private String activityId;
     private String activityType;
+    private int duration;
+    private int calories;
+    private String startTime;
+    private ActivityResponse currentActivity;
+    private Recommendation currentRecommendation;
 
     public static ActivityDetailFragment newInstance(
-            String activityId, 
-            String activityType, 
-            int duration, 
-            int calories, 
+            String activityId,
+            String activityType,
+            int duration,
+            int calories,
             String startTime
     ) {
         ActivityDetailFragment fragment = new ActivityDetailFragment();
@@ -81,9 +106,15 @@ public class ActivityDetailFragment extends Fragment {
         return fragment;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true); // Enable options menu for share button
+    }
+
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, 
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_activity_detail, container, false);
     }
@@ -96,33 +127,53 @@ public class ActivityDetailFragment extends Fragment {
         extractArguments();
         setupViewModel();
         displayBasicInfo();
-        loadRecommendation();
+        loadData();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_activity_detail, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_share) {
+            shareWorkout();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void initializeViews(View view) {
         // Hero Header
         activityTypeText = view.findViewById(R.id.activity_type_header);
+        intensityBadge = view.findViewById(R.id.intensity_badge);
         durationText = view.findViewById(R.id.duration_value);
         caloriesText = view.findViewById(R.id.calories_value);
         startTimeText = view.findViewById(R.id.start_time_value);
-        
-        // Metrics Section
-        metricsContainer = view.findViewById(R.id.metrics_container);
-        metricsTitle = view.findViewById(R.id.metrics_title);
-        noMetricsText = view.findViewById(R.id.no_metrics_text);
-        
+
+        // Lottie Animation
+        lottieCard = view.findViewById(R.id.lottie_card);
+        lottieAnimation = view.findViewById(R.id.lottie_animation);
+        lottieLoadingText = view.findViewById(R.id.lottie_loading_text);
+
+        // Metrics Grid
+        metricsContainer = view.findViewById(R.id.metrics_grid_linear);
+        metricsGrid = view.findViewById(R.id.metrics_grid);
+
+
+        // Chart
+        chartCard = view.findViewById(R.id.chart_card);
+        caloriesChart = view.findViewById(R.id.calories_chart);
+
         // Recommendation Section
         recommendationCard = view.findViewById(R.id.recommendation_card);
         recommendationText = view.findViewById(R.id.recommendation_text);
         improvementsContainer = view.findViewById(R.id.improvements_container);
         suggestionsContainer = view.findViewById(R.id.suggestions_container);
         safetyContainer = view.findViewById(R.id.safety_container);
-        
-        // Loading
-        loadingContainer = view.findViewById(R.id.loading_container);
-        loadingProgress = view.findViewById(R.id.loading_progress);
-        loadingText = view.findViewById(R.id.loading_text);
-        
+
         // Error
         errorContainer = view.findViewById(R.id.error_container);
         errorText = view.findViewById(R.id.error_text);
@@ -132,6 +183,9 @@ public class ActivityDetailFragment extends Fragment {
         if (getArguments() != null) {
             activityId = getArguments().getString(ARG_ACTIVITY_ID);
             activityType = getArguments().getString(ARG_ACTIVITY_TYPE);
+            duration = getArguments().getInt(ARG_DURATION, 0);
+            calories = getArguments().getInt(ARG_CALORIES, 0);
+            startTime = getArguments().getString(ARG_START_TIME, "");
         }
     }
 
@@ -140,67 +194,109 @@ public class ActivityDetailFragment extends Fragment {
     }
 
     private void displayBasicInfo() {
-        if (getArguments() == null) return;
 
-        String type = getArguments().getString(ARG_ACTIVITY_TYPE, "Activity");
-        int duration = getArguments().getInt(ARG_DURATION, 0);
-        int calories = getArguments().getInt(ARG_CALORIES, 0);
-        String startTime = getArguments().getString(ARG_START_TIME, "");
+        if (calories > 300) {
+            intensityBadge.setText("🔥");
+//            intensityBadge.setTextColor(Color.);
+        } else if (calories > 150) {
+            intensityBadge.setText("⚡");
+            intensityBadge.setTextColor(Color.YELLOW);
+        } else {
+            intensityBadge.setText("💙");
+            intensityBadge.setTextColor(Color.GREEN);
+        }
 
-        activityTypeText.setText(formatActivityType(type));
+        activityTypeText.setText((activityType));
         durationText.setText(duration + " min");
         caloriesText.setText(calories + " kcal");
         startTimeText.setText(ActivityAdapter.formatDateTime(startTime));
-        
-        // Set loading text based on activity type
-        setLoadingMessage(type);
+
+        // Set Lottie animation based on activity type
+        setupLottieAnimation(activityType);
     }
 
-    private void setLoadingMessage(String type) {
+    private void setupLottieAnimation(String type) {
         if (type == null) {
-            loadingText.setText("Generating personalized insights...");
+            lottieAnimation.setAnimation(R.raw.running);
+            lottieLoadingText.setText("Generating personalized insights... 🧠");
             return;
         }
-        
+
+        int animationRes;
+        String message;
+
         switch (type.toUpperCase()) {
             case "RUNNING":
-                loadingText.setText("Analyzing your run with AI... 🧠🏃‍♂️");
+                animationRes = R.raw.running;
+                message = "Analyzing your run with AI... 🧠🏃";
                 break;
             case "CYCLING":
-                loadingText.setText("Analyzing your ride with AI... 🧠🚴‍♂️");
+                animationRes = R.raw.cycling;
+                message = "Analyzing your ride with AI... 🧠🚴";
                 break;
             case "SWIMMING":
-                loadingText.setText("Analyzing your swim with AI... 🧠🏊‍♂️");
+                animationRes = R.raw.swimming;
+                message = "Analyzing your swim with AI... 🧠🏊";
                 break;
             case "WALKING":
-                loadingText.setText("Analyzing your walk with AI... 🧠🚶‍♂️");
+                animationRes = R.raw.walking;
+                message = "Analyzing your walk with AI... 🧠🚶";
                 break;
             case "YOGA":
-                loadingText.setText("Analyzing your yoga session with AI... 🧠🧘‍♂️");
+                animationRes = R.raw.yoga;
+                message = "Analyzing your yoga session with AI... 🧠🧘";
                 break;
-            case "GYM":
+//            case "BOXING":
+//                animationRes = R.raw.boxing;
+//                message = "Analyzing your boxing session with AI... 🧠🥊";
+//                break;
+            case "WEIGHT_LIFTING":
             case "WEIGHTLIFTING":
-                loadingText.setText("Analyzing your workout with AI... 🧠🏋️‍♂️");
+                animationRes = R.raw.weight_lifting;
+                message = "Analyzing your workout with AI... 🧠🏋️";
                 break;
+//            case "CARDIO":
+//                animationRes = R.raw.cardio;
+//                message = "Analyzing your cardio with AI... 🧠💓";
+//                break;
+//            case "STRETCHING":
+//                animationRes = R.raw.stretching;
+//                message = "Analyzing your stretching with AI... 🧠🤸";
+//                break;
             default:
-                loadingText.setText("Generating personalized insights... 🧠");
+                animationRes = R.raw.running;
+                message = "Generating personalized insights... 🧠";
                 break;
         }
+
+        lottieAnimation.setAnimation(animationRes);
+        lottieLoadingText.setText(message);
+        lottieAnimation.playAnimation();
     }
 
-    private void loadRecommendation() {
+    private void loadData() {
         if (activityId == null) {
             showError("Activity ID not found");
             return;
         }
 
-        // Show loading animation
-        showLoading();
+        // Show Lottie loading
+        showLottieLoading();
 
-        // Observe recommendation
+        // Fetch full activity details (for metrics)
+        viewModel.getActivityDetails(activityId).observe(getViewLifecycleOwner(), activity -> {
+            if (activity != null) {
+                currentActivity = activity;
+                displayMetrics(activity);
+                displayChart(activity);
+            }
+        });
+
+        // Fetch AI recommendation
         viewModel.getRecommendation(activityId).observe(getViewLifecycleOwner(), recommendation -> {
             if (recommendation != null) {
-                hideLoading();
+                currentRecommendation = recommendation;
+                hideLottieLoading();
                 displayRecommendation(recommendation);
             }
         });
@@ -208,36 +304,192 @@ public class ActivityDetailFragment extends Fragment {
         // Observe errors
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
-                hideLoading();
+                hideLottieLoading();
                 showError(error);
             }
         });
     }
 
-    private void showLoading() {
-        loadingContainer.setVisibility(View.VISIBLE);
+    private void showLottieLoading() {
+        lottieCard.setVisibility(View.VISIBLE);
         recommendationCard.setVisibility(View.GONE);
         errorContainer.setVisibility(View.GONE);
     }
 
-    private void hideLoading() {
-        // Smooth fade out animation
-        loadingContainer.animate()
+    private void hideLottieLoading() {
+        // Smooth fade out Lottie
+        lottieCard.animate()
                 .alpha(0f)
-                .setDuration(300)
+                .setDuration(400)
                 .withEndAction(() -> {
-                    loadingContainer.setVisibility(View.GONE);
-                    loadingContainer.setAlpha(1f);
-                    
+                    lottieCard.setVisibility(View.GONE);
+                    lottieCard.setAlpha(1f);
+                    lottieAnimation.pauseAnimation();
+
                     // Fade in recommendation card
                     recommendationCard.setAlpha(0f);
                     recommendationCard.setVisibility(View.VISIBLE);
                     recommendationCard.animate()
                             .alpha(1f)
-                            .setDuration(300)
+                            .setDuration(400)
                             .start();
                 })
                 .start();
+    }
+
+    private void displayMetrics(ActivityResponse activity) {
+
+        LinearLayout metricsContainer =
+                requireView().findViewById(R.id.metrics_grid_linear);
+
+        metricsGrid.removeAllViews();
+
+        if (activity.getAdditionalMetrics() == null ||
+                activity.getAdditionalMetrics().isEmpty()) {
+
+            metricsContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        Map<String, MetricsHelper.Metric> metrics =
+                MetricsHelper.parseMetrics(activity.getAdditionalMetrics());
+
+        if (metrics.isEmpty()) {
+            metricsContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        metricsContainer.setVisibility(View.VISIBLE);
+
+        // Now add cards
+        for (MetricsHelper.Metric metric : metrics.values()) {
+            View metricCard = createMetricCard(metric);
+            metricsGrid.addView(metricCard);
+
+        }
+
+        // Fade in animation
+        metricsGrid.setAlpha(0f);
+        metricsGrid.animate()
+                .alpha(1f)
+                .setDuration(400)
+                .setStartDelay(200)
+                .start();
+    }
+
+
+    private View createMetricCard(MetricsHelper.Metric metric) {
+        View cardView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_metric_card, metricsGrid, false);
+
+        TextView emojiText = cardView.findViewById(R.id.metric_emoji);
+        TextView labelText = cardView.findViewById(R.id.metric_label);
+        TextView valueText = cardView.findViewById(R.id.metric_value);
+
+        emojiText.setText(metric.emoji);
+        labelText.setText(metric.label);
+        valueText.setText(metric.value);
+
+        return cardView;
+    }
+
+    private void displayChart(ActivityResponse activity) {
+        if (activity.getDuration() == null || activity.getCaloriesBurned() == null ||
+                activity.getDuration() <= 0 || activity.getCaloriesBurned() <= 0) {
+            chartCard.setVisibility(View.GONE);
+            return;
+        }
+
+        chartCard.setVisibility(View.VISIBLE);
+        caloriesChart.setHighlightPerTapEnabled(true);
+
+
+        // Generate smooth calorie curve
+        List<Entry> entries = generateCalorieCurve(
+                activity.getDuration(),
+                activity.getCaloriesBurned()
+        );
+
+        // Configure chart
+        LineDataSet dataSet = new LineDataSet(entries, "Calories Burned");
+        dataSet.setColor(getResources().getColor(R.color.primary, null));
+        dataSet.setLineWidth(3f);
+        dataSet.setDrawCircles(false);
+        dataSet.setDrawValues(false);
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // Smooth curve
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(getResources().getColor(R.color.primary_light, null));
+        dataSet.setFillAlpha(50);
+
+        LineData lineData = new LineData(dataSet);
+        caloriesChart.setData(lineData);
+
+        // Customize chart appearance
+        Description description = new Description();
+        description.setText("Calories vs Time");
+        description.setTextSize(12f);
+        caloriesChart.setDescription(description);
+
+        caloriesChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        caloriesChart.getXAxis().setGranularity(1f);
+        caloriesChart.getXAxis().setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return ((int) value) + " min";
+            }
+        });
+
+
+        caloriesChart.getAxisRight().setEnabled(false);
+        caloriesChart.getAxisLeft().setAxisMinimum(0f);
+
+        caloriesChart.getLegend().setEnabled(false);
+        caloriesChart.setTouchEnabled(true);
+        caloriesChart.setDragEnabled(true);
+        caloriesChart.setScaleEnabled(false);
+
+
+        float avgCalories = (float) calories / duration;
+
+        LimitLine avgLine = new LimitLine(avgCalories, "Avg");
+        avgLine.setLineWidth(1.5f);
+        caloriesChart.getAxisLeft().addLimitLine(avgLine);
+
+
+        // Animate chart
+        caloriesChart.animateY(800);
+        caloriesChart.invalidate();
+
+        // Fade in animation
+        chartCard.setAlpha(0f);
+        chartCard.animate()
+                .alpha(1f)
+                .setDuration(400)
+                .setStartDelay(400)
+                .start();
+    }
+
+    /**
+     * Generate smooth calorie burn curve
+     * Simulates realistic calorie burn over time
+     */
+    private List<Entry> generateCalorieCurve(int duration, int totalCalories) {
+        List<Entry> entries = new ArrayList<>();
+
+        // Create smooth curve with 20 data points
+        int points = Math.min(duration, 20);
+
+        for (int i = 0; i <= points; i++) {
+            float time = (duration * i) / (float) points;
+
+            // Non-linear calorie burn (faster at start, slower at end)
+            float progress = i / (float) points;
+            float calories = (float) (totalCalories * (1 - Math.pow(1 - progress, 1.2)));
+
+            entries.add(new Entry(time, calories));
+        }
+
+        return entries;
     }
 
     private void displayRecommendation(Recommendation rec) {
@@ -261,7 +513,7 @@ public class ActivityDetailFragment extends Fragment {
 
     private void displayBulletList(LinearLayout container, List<String> items, String prefix) {
         container.removeAllViews();
-        
+
         if (items == null || items.isEmpty()) {
             container.setVisibility(View.GONE);
             return;
@@ -274,35 +526,85 @@ public class ActivityDetailFragment extends Fragment {
             bulletPoint.setText(prefix + item);
             bulletPoint.setTextSize(14);
             bulletPoint.setTextColor(getResources().getColor(R.color.text_primary, null));
-            
+
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
             params.setMargins(0, 0, 0, 16);
             bulletPoint.setLayoutParams(params);
-            
+
             container.addView(bulletPoint);
         }
     }
 
+    /**
+     * Share workout summary
+     */
+    private void shareWorkout() {
+        if (activityType == null) {
+            Toast.makeText(requireContext(), "No activity data to share", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        StringBuilder shareText = new StringBuilder();
+        shareText.append("🏃 My Workout Summary\n\n");
+        shareText.append("Activity: ").append((activityType)).append("\n");
+        shareText.append("Duration: ").append(duration).append(" min\n");
+        shareText.append("Calories: ").append(calories).append(" kcal\n");
+
+        // Add AI insight if available
+        if (currentRecommendation != null &&
+                currentRecommendation.getRecommendation() != null &&
+                !currentRecommendation.getRecommendation().isEmpty()) {
+            shareText.append("\n🔥 AI Insight:\n");
+            shareText.append("\"").append(currentRecommendation.getRecommendation()).append("\"\n");
+        }
+
+        shareText.append("\n#FitnessApp #AIWorkout");
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareText.toString());
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, "My Workout Summary");
+
+        if (currentActivity != null &&
+                currentActivity.getAdditionalMetrics() != null) {
+
+            shareText.append("\n📊 Metrics:\n");
+
+            for (Map.Entry<String, Object> entry :
+                    currentActivity.getAdditionalMetrics().entrySet()) {
+
+                shareText.append("• ")
+                        .append(entry.getKey())
+                        .append(": ")
+                        .append(entry.getValue())
+                        .append("\n");
+            }
+        }
+
+
+        startActivity(Intent.createChooser(shareIntent, "Share Workout"));
+    }
+
     private void showError(String message) {
-        loadingContainer.setVisibility(View.GONE);
+        lottieCard.setVisibility(View.GONE);
         recommendationCard.setVisibility(View.GONE);
         errorContainer.setVisibility(View.VISIBLE);
         errorText.setText(message);
-        
+
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private String formatActivityType(String type) {
         if (type == null) return "Activity";
-        
+
         // Convert enum format to readable format
         // RUNNING → Running
         // WEIGHT_LIFTING → Weight Lifting
-        return type.substring(0, 1).toUpperCase() + 
-               type.substring(1).toLowerCase().replace("_", " ");
+        return type.substring(0, 1).toUpperCase() +
+                type.substring(1).toLowerCase().replace("_", " ");
     }
 
     @Override

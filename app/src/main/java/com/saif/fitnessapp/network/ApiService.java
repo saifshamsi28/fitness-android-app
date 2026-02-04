@@ -49,4 +49,8 @@ public interface ApiService {
 
     @GET("api/recommendations/activity/{activityId}")
     Call<Recommendation> getActivityRecommendation(@Path("activityId") String activityId);
+
+    @GET("/api/activities/{activityId}")
+    Call<ActivityResponse> getActivityById(@Path("activityId") String activityId);
+
 }
