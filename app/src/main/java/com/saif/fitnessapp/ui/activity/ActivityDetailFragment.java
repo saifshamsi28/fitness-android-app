@@ -558,23 +558,52 @@ public class ActivityDetailFragment extends Fragment {
     }
 
     private void displayRecommendation(Recommendation rec) {
-        // Main recommendation text
         if (rec.getRecommendation() != null && !rec.getRecommendation().isEmpty()) {
             recommendationText.setText(rec.getRecommendation());
             recommendationText.setVisibility(View.VISIBLE);
-        } else {
-            recommendationText.setVisibility(View.GONE);
+
+            recommendationText.setAlpha(0f);
+            recommendationText.animate()
+                    .alpha(1f)
+                    .setDuration(400)
+                    .start();
         }
 
-        // Improvements
+        //display improvements
         displayBulletList(improvementsContainer, rec.getImprovements(), "✅ ");
-
-        // Suggestions
+        //display suggestions
         displayBulletList(suggestionsContainer, rec.getSuggestions(), "💡 ");
-
-        // Safety Tips
+        //display safety-guidelines
         displayBulletList(safetyContainer, rec.getSafety(), "⚠️ ");
     }
+
+
+//    private void displayBulletList(LinearLayout container, List<String> items, String prefix) {
+//        container.removeAllViews();
+//
+//        if (items == null || items.isEmpty()) {
+//            container.setVisibility(View.GONE);
+//            return;
+//        }
+//
+//        container.setVisibility(View.VISIBLE);
+//
+//        for (String item : items) {
+//            TextView bulletPoint = new TextView(requireContext());
+//            bulletPoint.setText(prefix + item);
+//            bulletPoint.setTextSize(14);
+//            bulletPoint.setTextColor(getResources().getColor(R.color.text_primary, null));
+//
+//            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+//                    LinearLayout.LayoutParams.MATCH_PARENT,
+//                    LinearLayout.LayoutParams.WRAP_CONTENT
+//            );
+//            params.setMargins(0, 0, 0, 16);
+//            bulletPoint.setLayoutParams(params);
+//
+//            container.addView(bulletPoint);
+//        }
+//    }
 
     private void displayBulletList(LinearLayout container, List<String> items, String prefix) {
         container.removeAllViews();
@@ -586,22 +615,58 @@ public class ActivityDetailFragment extends Fragment {
 
         container.setVisibility(View.VISIBLE);
 
-        for (String item : items) {
-            TextView bulletPoint = new TextView(requireContext());
-            bulletPoint.setText(prefix + item);
-            bulletPoint.setTextSize(14);
-            bulletPoint.setTextColor(getResources().getColor(R.color.text_primary, null));
+        for (int i = 0; i < items.size(); i++) {
+            View bulletCard = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.item_recommendation_bullet, container, false);
 
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            params.setMargins(0, 0, 0, 16);
-            bulletPoint.setLayoutParams(params);
+            TextView icon = bulletCard.findViewById(R.id.bullet_icon);
+            TextView text = bulletCard.findViewById(R.id.bullet_text);
+            View innerContainer = bulletCard.findViewById(R.id.bullet_container);
+            MaterialCardView card = bulletCard.findViewById(R.id.bullet_card);
 
-            container.addView(bulletPoint);
+            icon.setText(prefix);
+            text.setText(items.get(i));
+
+            // Color accents based on type
+            int color;
+            if (prefix.contains("✅")) color = Color.parseColor("#2ECC71"); // Green
+            else if (prefix.contains("💡")) color = Color.parseColor("#F1C40F"); // Yellow
+            else color = Color.parseColor("#E74C3C"); // Red for safety
+
+            card.setStrokeColor(color);
+            icon.setTextColor(color);
+
+            // ENTRY ANIMATION (staggered like metrics)
+            innerContainer.setAlpha(0f);
+            innerContainer.setTranslationY(20f);
+
+            innerContainer.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(i * 80L)
+                    .setDuration(300)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+
+            // TAP ANIMATION
+            innerContainer.setOnClickListener(v -> {
+                innerContainer.animate()
+                        .scaleX(0.97f)
+                        .scaleY(0.97f)
+                        .setDuration(80)
+                        .withEndAction(() ->
+                                innerContainer.animate()
+                                        .scaleX(1f)
+                                        .scaleY(1f)
+                                        .setDuration(120)
+                                        .start()
+                        ).start();
+            });
+
+            container.addView(bulletCard);
         }
     }
+
 
     /**
      * Share workout summary

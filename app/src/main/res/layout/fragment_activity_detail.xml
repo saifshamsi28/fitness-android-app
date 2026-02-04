@@ -246,8 +246,7 @@
             android:visibility="gone"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp"
-            app:cardUseCompatPadding="true"
-            tools:visibility="visible">
+            app:cardUseCompatPadding="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -259,29 +258,45 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🤖 AI Recommendation"
+                    android:text=" AI Recommendation"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary" />
 
-                <!-- Main Recommendation -->
-                <TextView
-                    android:id="@+id/recommendation_text"
+                <!-- ===== ANALYSIS HIGHLIGHT CARD ===== -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/analysis_card"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_primary"
-                    android:lineSpacingExtra="4dp"
-                    tools:text="Great pace! Your endurance is improving steadily." />
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/primary_light"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/recommendation_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:lineSpacingExtra="4dp"
+                            tools:text="Great pace! Your endurance is improving steadily." />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Improvements Section -->
                 <TextView
-                    android:id="@+id/improvements_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Improvements"
-                    android:textSize="14sp"
+                    android:text="✅ Improvements"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:layout_marginTop="16dp" />
@@ -295,11 +310,10 @@
 
                 <!-- Suggestions Section -->
                 <TextView
-                    android:id="@+id/suggestions_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Suggestions"
-                    android:textSize="14sp"
+                    android:text="💡 Suggestions"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:layout_marginTop="16dp" />
@@ -313,11 +327,10 @@
 
                 <!-- Safety Section -->
                 <TextView
-                    android:id="@+id/safety_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Safety Tips"
-                    android:textSize="14sp"
+                    android:text="⚠️ Safety Tips"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:layout_marginTop="16dp" />
@@ -328,8 +341,10 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:layout_marginTop="8dp" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
 
         <!-- ERROR STATE -->
         <LinearLayout
