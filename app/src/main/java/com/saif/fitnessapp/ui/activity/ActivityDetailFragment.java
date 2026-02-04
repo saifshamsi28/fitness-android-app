@@ -32,6 +32,7 @@ import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 import com.saif.fitnessapp.network.dto.Recommendation;
 import com.saif.fitnessapp.ui.TitleController;
+import com.saif.fitnessapp.ui.activity.utils.MetricsHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -390,8 +391,16 @@ public class ActivityDetailFragment extends Fragment {
         labelText.setText(metric.label);
         valueText.setText(metric.value);
 
+        // Apply color accent
+        int color = Color.parseColor(metric.colorHex);
+        valueText.setTextColor(color);
+
+        MaterialCardView card = (MaterialCardView) cardView;
+        card.setStrokeColor(color);
+
         return cardView;
     }
+
 
     private void displayChart(ActivityResponse activity) {
         if (activity.getDuration() == null || activity.getCaloriesBurned() == null ||

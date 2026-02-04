@@ -6,8 +6,11 @@
     android:layout_height="wrap_content"
     android:layout_columnWeight="1"
     android:layout_margin="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="1dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:strokeWidth=".5dp"
+    app:strokeColor="#EEEEEE"
+    >
 
     <LinearLayout
         android:layout_width="match_parent"
