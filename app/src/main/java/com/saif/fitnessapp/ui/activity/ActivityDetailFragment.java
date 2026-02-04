@@ -89,6 +89,10 @@ public class ActivityDetailFragment extends Fragment {
     private ActivityResponse currentActivity;
     private Recommendation currentRecommendation;
 
+    private boolean recommendationLoaded = false;
+    private boolean activityLoaded = false;
+
+
     public static ActivityDetailFragment newInstance(
             String activityId,
             String activityType,
@@ -288,19 +292,22 @@ public class ActivityDetailFragment extends Fragment {
         viewModel.getActivityDetails(activityId).observe(getViewLifecycleOwner(), activity -> {
             if (activity != null) {
                 currentActivity = activity;
-                displayMetrics(activity);
-                displayChart(activity);
+                activityLoaded = true;
+//                tryShowContentAfterLottie();   // <-- IMPORTANT
             }
         });
 
-        // Fetch AI recommendation
+// Fetch AI recommendation
         viewModel.getRecommendation(activityId).observe(getViewLifecycleOwner(), recommendation -> {
             if (recommendation != null) {
                 currentRecommendation = recommendation;
-                hideLottieLoading();
+                recommendationLoaded = true;
+                hideLottieLoading();           // first hide lottie
+//                tryShowContentAfterLottie();   // then show metrics
                 displayRecommendation(recommendation);
             }
         });
+
 
         // Observe errors
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
@@ -310,6 +317,15 @@ public class ActivityDetailFragment extends Fragment {
             }
         });
     }
+
+    private void tryShowContentAfterLottie() {
+        if (activityLoaded && recommendationLoaded) {
+            // Now and ONLY now show metrics & chart
+            displayMetrics(currentActivity);
+            displayChart(currentActivity);
+        }
+    }
+
 
     private void showLottieLoading() {
         lottieCard.setVisibility(View.VISIBLE);
@@ -334,6 +350,12 @@ public class ActivityDetailFragment extends Fragment {
                             .alpha(1f)
                             .setDuration(400)
                             .start();
+
+                    // NOW trigger metrics animation AFTER lottie is gone
+                    if (activityLoaded) {
+                        displayMetrics(currentActivity);
+                        displayChart(currentActivity);
+                    }
                 })
                 .start();
     }
@@ -370,13 +392,32 @@ public class ActivityDetailFragment extends Fragment {
         }
 
         // Fade in animation
-        metricsGrid.setAlpha(0f);
-        metricsGrid.animate()
+//        metricsGrid.setAlpha(0f);
+//        metricsGrid.animate()
+//                .alpha(1f)
+//                .setDuration(400)
+//                .setStartDelay(200)
+//                .start();
+        for (int i = 0; i < metricsGrid.getChildCount(); i++) {
+            View card = metricsGrid.getChildAt(i);
+            animateMetricCard(card, i);
+        }
+    }
+
+    private void animateMetricCard(View card, int index) {
+        View container = card.findViewById(R.id.metric_container);
+
+        container.animate()
                 .alpha(1f)
-                .setDuration(400)
-                .setStartDelay(200)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setStartDelay(index * 80L)   // Stagger effect
+                .setDuration(350)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
                 .start();
     }
+
 
 
     private View createMetricCard(MetricsHelper.Metric metric) {
@@ -386,6 +427,7 @@ public class ActivityDetailFragment extends Fragment {
         TextView emojiText = cardView.findViewById(R.id.metric_emoji);
         TextView labelText = cardView.findViewById(R.id.metric_label);
         TextView valueText = cardView.findViewById(R.id.metric_value);
+        View container = cardView.findViewById(R.id.metric_container);
 
         emojiText.setText(metric.emoji);
         labelText.setText(metric.label);
@@ -398,6 +440,20 @@ public class ActivityDetailFragment extends Fragment {
         MaterialCardView card = (MaterialCardView) cardView;
         card.setStrokeColor(color);
 
+        // TAP POP ANIMATION
+        card.setOnClickListener(v -> {
+            container.animate()
+                    .scaleX(0.97f)
+                    .scaleY(0.97f)
+                    .setDuration(80)
+                    .withEndAction(() ->
+                            container.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(120)
+                                    .start()
+                    ).start();
+        });
         return cardView;
     }
 
