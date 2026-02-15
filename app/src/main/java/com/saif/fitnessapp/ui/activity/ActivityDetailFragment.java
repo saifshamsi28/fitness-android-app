@@ -558,6 +558,7 @@ public class ActivityDetailFragment extends Fragment {
     }
 
     private void displayRecommendation(Recommendation rec) {
+        // Display the main AI recommendation text
         if (rec.getRecommendation() != null && !rec.getRecommendation().isEmpty()) {
             recommendationText.setText(rec.getRecommendation());
             recommendationText.setVisibility(View.VISIBLE);
@@ -569,43 +570,14 @@ public class ActivityDetailFragment extends Fragment {
                     .start();
         }
 
-        //display improvements
-        displayBulletList(improvementsContainer, rec.getImprovements(), "✅ ");
-        //display suggestions
-        displayBulletList(suggestionsContainer, rec.getSuggestions(), "💡 ");
-        //display safety-guidelines
-        displayBulletList(safetyContainer, rec.getSafety(), "⚠️ ");
+        // Display improvements, suggestions, and safety tips
+        // Now with smart parsing of "Label: Description" format
+        displayBulletList(improvementsContainer, rec.getImprovements(), "✅");
+        displayBulletList(suggestionsContainer, rec.getSuggestions(), "💡");
+        displayBulletList(safetyContainer, rec.getSafety(), "⚠️");
     }
 
-
-//    private void displayBulletList(LinearLayout container, List<String> items, String prefix) {
-//        container.removeAllViews();
-//
-//        if (items == null || items.isEmpty()) {
-//            container.setVisibility(View.GONE);
-//            return;
-//        }
-//
-//        container.setVisibility(View.VISIBLE);
-//
-//        for (String item : items) {
-//            TextView bulletPoint = new TextView(requireContext());
-//            bulletPoint.setText(prefix + item);
-//            bulletPoint.setTextSize(14);
-//            bulletPoint.setTextColor(getResources().getColor(R.color.text_primary, null));
-//
-//            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-//                    LinearLayout.LayoutParams.MATCH_PARENT,
-//                    LinearLayout.LayoutParams.WRAP_CONTENT
-//            );
-//            params.setMargins(0, 0, 0, 16);
-//            bulletPoint.setLayoutParams(params);
-//
-//            container.addView(bulletPoint);
-//        }
-//    }
-
-    private void displayBulletList(LinearLayout container, List<String> items, String prefix) {
+    private void displayBulletList(LinearLayout container, List<String> items, String emoji) {
         container.removeAllViews();
 
         if (items == null || items.isEmpty()) {
@@ -616,39 +588,81 @@ public class ActivityDetailFragment extends Fragment {
         container.setVisibility(View.VISIBLE);
 
         for (int i = 0; i < items.size(); i++) {
+            String fullText = items.get(i);
+            String label = "";
+            String description = "";
+
+            // ========================================
+            // STEP 1: Parse "Label: Description" format
+            // ========================================
+            if (fullText.contains(":")) {
+                // Split at first colon only
+                String[] parts = fullText.split(":", 2);
+                label = parts[0].trim();           // "Stroke Rate"
+                description = parts.length > 1 ? parts[1].trim() : ""; // "Incorporate..."
+            } else {
+                // Fallback if no colon found - use entire text as label
+                label = fullText;
+                description = "";
+            }
+
+            // ========================================
+            // STEP 2: Inflate the layout
+            // ========================================
             View bulletCard = LayoutInflater.from(requireContext())
                     .inflate(R.layout.item_recommendation_bullet, container, false);
 
+            // ========================================
+            // STEP 3: Get view references
+            // ========================================
             TextView icon = bulletCard.findViewById(R.id.bullet_icon);
-            TextView text = bulletCard.findViewById(R.id.bullet_text);
+            TextView labelText = bulletCard.findViewById(R.id.bullet_label);
+            TextView descriptionText = bulletCard.findViewById(R.id.bullet_text);
             View innerContainer = bulletCard.findViewById(R.id.bullet_container);
             MaterialCardView card = bulletCard.findViewById(R.id.bullet_card);
 
-            icon.setText(prefix);
-            text.setText(items.get(i));
+            // ========================================
+            // STEP 4: Set text content
+            // ========================================
+            icon.setText(emoji);                   // ✅, 💡, or ⚠️
+            labelText.setText(label);              // "STROKE RATE" (bold, all-caps)
+            descriptionText.setText(description); // "Incorporate interval training..."
 
-            // Color accents based on type
+            // ========================================
+            // STEP 5: Apply color coding by emoji type
+            // ========================================
             int color;
-            if (prefix.contains("✅")) color = Color.parseColor("#2ECC71"); // Green
-            else if (prefix.contains("💡")) color = Color.parseColor("#F1C40F"); // Yellow
-            else color = Color.parseColor("#E74C3C"); // Red for safety
+            if (emoji.contains("✅")) {
+                color = Color.parseColor("#2ECC71"); // Green for improvements
+            } else if (emoji.contains("💡")) {
+                color = Color.parseColor("#F1C40F"); // Yellow for suggestions
+            } else if (emoji.contains("⚠️")) {
+                color = Color.parseColor("#E74C3C"); // Red for safety
+            } else {
+                color = Color.parseColor("#3498DB"); // Blue fallback
+            }
 
             card.setStrokeColor(color);
             icon.setTextColor(color);
+            labelText.setTextColor(color);
 
-            // ENTRY ANIMATION (staggered like metrics)
+            // ========================================
+            // STEP 6: Entry animation (staggered)
+            // ========================================
             innerContainer.setAlpha(0f);
             innerContainer.setTranslationY(20f);
 
             innerContainer.animate()
                     .alpha(1f)
                     .translationY(0f)
-                    .setStartDelay(i * 80L)
+                    .setStartDelay(i * 80L)        // Stagger each item by 80ms
                     .setDuration(300)
                     .setInterpolator(new android.view.animation.DecelerateInterpolator())
                     .start();
 
-            // TAP ANIMATION
+            // ========================================
+            // STEP 7: Tap animation (feedback)
+            // ========================================
             innerContainer.setOnClickListener(v -> {
                 innerContainer.animate()
                         .scaleX(0.97f)
@@ -663,6 +677,7 @@ public class ActivityDetailFragment extends Fragment {
                         ).start();
             });
 
+            // Add the card to the container
             container.addView(bulletCard);
         }
     }
