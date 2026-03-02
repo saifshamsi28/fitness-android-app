@@ -55,6 +55,19 @@ android {
             "\"${localProps["API_DEVICE_URL"] ?: "http://10.163.19.205:8080"}\""
         )
 
+        // Production (Render) URLs — override emulator/device detection when set
+        buildConfigField(
+            "String",
+            "KEYCLOAK_PRODUCTION_URL",
+            "\"${localProps["KEYCLOAK_PRODUCTION_URL"] ?: "https://fitness-keycloak-5jt3.onrender.com"}\""
+        )
+
+        buildConfigField(
+            "String",
+            "API_PRODUCTION_URL",
+            "\"${localProps["API_PRODUCTION_URL"] ?: "https://fitness-gateway.onrender.com"}\""
+        )
+
         // Common config
         buildConfigField(
             "String",

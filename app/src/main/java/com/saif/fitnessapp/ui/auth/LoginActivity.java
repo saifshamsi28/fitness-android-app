@@ -2,13 +2,19 @@ package com.saif.fitnessapp.ui.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.Toast;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.CheckBox;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.saif.fitnessapp.MainActivity;
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.auth.AuthManager;
@@ -22,155 +28,152 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
-    private static final int RC_AUTH = 100;
 
-    @Inject
-    AuthManager authManager;
+    @Inject AuthManager authManager;
+    @Inject TokenManager tokenManager;
 
-    @Inject
-    TokenManager tokenManager;
-
-    private Button loginButton;
-    private Button signupButton;
+    private TextInputLayout emailLayout;
+    private TextInputLayout passwordLayout;
+    private TextInputEditText emailInput;
+    private TextInputEditText passwordInput;
+    private CheckBox rememberMeCheckbox;
+    private MaterialButton loginButton;
+    private TextView signupButton;
+    private TextView forgotPasswordButton;
+    private TextView errorMessage;
+    private FrameLayout loadingOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "onCreate called");
-
-        // Check if already logged in
         if (tokenManager.isLoggedIn()) {
-            Log.d(TAG, "User already logged in, navigating to MainActivity");
             navigateToMain();
             return;
         }
 
         setContentView(R.layout.activity_login);
 
-        // Initialize views
-        loginButton = findViewById(R.id.login_button);
-        signupButton = findViewById(R.id.signup_button);
+        emailLayout        = findViewById(R.id.email_layout);
+        passwordLayout     = findViewById(R.id.password_layout);
+        emailInput         = findViewById(R.id.email_input);
+        passwordInput      = findViewById(R.id.password_input);
+        rememberMeCheckbox = findViewById(R.id.remember_me_checkbox);
+        loginButton        = findViewById(R.id.login_button);
+        signupButton       = findViewById(R.id.signup_button);
+        forgotPasswordButton = findViewById(R.id.forgot_password_button);
+        errorMessage       = findViewById(R.id.error_message);
+        loadingOverlay     = findViewById(R.id.loading_overlay);
 
-        // Setup click listeners
-        loginButton.setOnClickListener(v -> {
-            Log.d(TAG, "Login button clicked");
-            authManager.startLogin(this);
-        });
-
-        signupButton.setOnClickListener(v -> {
-            Log.d(TAG, "Signup button clicked");
-            navigateToSignup();
-        });
-
-        // Handle auto-login after signup
-        handleAutoLogin();
-
-        // Handle the intent if this activity was launched with intent data
-        handleIntent(getIntent());
-    }
-
-    private void navigateToSignup() {
-        Intent intent = new Intent(this, SignupActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * Handle auto-login after successful signup
-     * SignupActivity will pass AUTO_LOGIN flag
-     */
-    private void handleAutoLogin() {
-        Intent intent = getIntent();
-        if (intent != null && intent.getBooleanExtra("AUTO_LOGIN", false)) {
-            String email = intent.getStringExtra("EMAIL");
-            Log.d(TAG, "Auto-login requested for: " + email);
-            Toast.makeText(this, "Please login with your new account", Toast.LENGTH_LONG).show();
-
-            // Automatically trigger login
-            // User will need to enter credentials in Keycloak login page
-            authManager.startLogin(this);
+        if (tokenManager.isRememberMe()) {
+            emailInput.setText(tokenManager.getSavedEmail());
+            passwordInput.setText(tokenManager.getSavedPassword());
+            rememberMeCheckbox.setChecked(true);
         }
-    }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        Log.d(TAG, "onNewIntent called");
-        setIntent(intent); // IMPORTANT: Update the activity's intent
-        handleIntent(intent);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        Log.d(TAG, "onActivityResult - requestCode: " + requestCode + ", resultCode: " + resultCode);
-
-        if (requestCode == RC_AUTH) {
-            if (data != null) {
-                handleAuthResponse(data);
-            } else {
-                Log.e(TAG, "onActivityResult - data is null");
-                Toast.makeText(this, "Login cancelled", Toast.LENGTH_SHORT).show();
+        Intent incoming = getIntent();
+        if (incoming != null) {
+            String prefillEmail = incoming.getStringExtra("EMAIL");
+            if (prefillEmail != null && !prefillEmail.isEmpty()) {
+                emailInput.setText(prefillEmail);
             }
         }
+
+        loginButton.setOnClickListener(v -> attemptLogin());
+        passwordInput.setOnEditorActionListener((v, actionId, event) -> { attemptLogin(); return true; });
+        signupButton.setOnClickListener(v -> startActivity(new Intent(this, SignupActivity.class)));
+        forgotPasswordButton.setOnClickListener(v -> startActivity(new Intent(this, ForgotPasswordActivity.class)));
     }
 
-    private void handleIntent(Intent intent) {
-        if (intent == null) {
-            Log.d(TAG, "handleIntent - intent is null");
-            return;
-        }
+    private void attemptLogin() {
+        clearErrors();
+        hideKeyboard();
 
-        if (intent.getData() == null) {
-            Log.d(TAG, "No intent data");
-            return; // Normal launch, not a redirect
-        }
+        String email    = emailInput.getText() != null ? emailInput.getText().toString().trim() : "";
+        String password = passwordInput.getText() != null ? passwordInput.getText().toString() : "";
 
-        Log.d(TAG, "handleIntent - has data: " + intent.getData());
-        handleAuthResponse(intent);
-    }
+        if (!validateInputs(email, password)) return;
 
-    private void handleAuthResponse(Intent intent) {
-        Log.d(TAG, "handleAuthResponse called");
+        setLoading(true);
 
-        authManager.handleAuthResponse(intent, new AuthManager.AuthCallback() {
+        authManager.loginWithCredentials(email, password, new AuthManager.AuthCallback() {
             @Override
             public void onSuccess() {
-                Log.d(TAG, "Login successful");
-                runOnUiThread(() -> {
-                    Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
-                    navigateToMain();
-                });
+                if (rememberMeCheckbox.isChecked()) {
+                    tokenManager.saveCredentials(email, password);
+                } else {
+                    tokenManager.clearSavedCredentials();
+                }
+                runOnUiThread(() -> { setLoading(false); navigateToMain(); });
             }
 
             @Override
             public void onError(String error) {
-                Log.e(TAG, "Login failed: " + error);
-                runOnUiThread(() -> {
-                    Toast.makeText(LoginActivity.this, "Login failed: " + error, Toast.LENGTH_LONG).show();
-                });
+                Log.e(TAG, "Login error: " + error);
+                runOnUiThread(() -> { setLoading(false); showError(friendlyError(error)); });
             }
         });
     }
 
+    private boolean validateInputs(String email, String password) {
+        boolean valid = true;
+        if (TextUtils.isEmpty(email)) {
+            emailLayout.setError("Email or username is required"); valid = false;
+        }
+        if (TextUtils.isEmpty(password)) {
+            passwordLayout.setError("Password is required"); valid = false;
+        }
+        return valid;
+    }
+
+    private void clearErrors() {
+        emailLayout.setError(null);
+        passwordLayout.setError(null);
+        errorMessage.setVisibility(View.GONE);
+    }
+
+    private void showError(String msg) {
+        errorMessage.setText(msg);
+        errorMessage.setVisibility(View.VISIBLE);
+        errorMessage.animate().translationX(-8f).setDuration(50)
+                .withEndAction(() -> errorMessage.animate().translationX(8f).setDuration(50)
+                        .withEndAction(() -> errorMessage.animate().translationX(0f).setDuration(50).start()).start()).start();
+    }
+
+    private void setLoading(boolean loading) {
+        loadingOverlay.setVisibility(loading ? View.VISIBLE : View.GONE);
+        loginButton.setEnabled(!loading);
+        emailInput.setEnabled(!loading);
+        passwordInput.setEnabled(!loading);
+        rememberMeCheckbox.setEnabled(!loading);
+    }
+
+    private void hideKeyboard() {
+        View focus = getCurrentFocus();
+        if (focus != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+        }
+    }
+
+    private String friendlyError(String error) {
+        if (error == null) return "Login failed. Please try again.";
+        String lower = error.toLowerCase();
+        if (lower.contains("credentials") || lower.contains("invalid_grant") || lower.contains("invalid user")) {
+            return "Incorrect username/email or password. Please try again.";
+        }
+        if (lower.contains("network") || lower.contains("connect")) {
+            return "Network error. Check your internet connection.";
+        }
+        if (lower.contains("disabled")) return "Your account has been disabled.";
+        if (lower.contains("locked")) return "Account temporarily locked. Try again later.";
+        return "Login failed. Please try again.";
+    }
+
     private void navigateToMain() {
-        Log.d(TAG, "Navigating to MainActivity");
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume called");
-
-        // Check again in case user logged in elsewhere
-        if (tokenManager.isLoggedIn() && !isFinishing()) {
-            Log.d(TAG, "User logged in during resume, navigating to MainActivity");
-            navigateToMain();
-        }
     }
 }

@@ -46,4 +46,15 @@
     <string name="nav_activity">Activity</string>
     <string name="nav_recommendations">AI Recommendations</string>
     <string name="nav_profile">Profile</string>
+
+    <!-- Enhanced Home -->
+    <string name="track_new_activity">Track New Activity</string>
+    <string name="recent_activities">Recent Activities</string>
+    <string name="view_all">View All</string>
+    <string name="no_activities_yet">No activities yet. Start your fitness journey!</string>
+
+    <!-- Enhanced Profile -->
+    <string name="account_info">Account Information</string>
+    <string name="full_name">Full Name</string>
+    <string name="email_address">Email Address</string>
 </resources>

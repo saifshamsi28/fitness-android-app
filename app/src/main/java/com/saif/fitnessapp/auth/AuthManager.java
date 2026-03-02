@@ -19,9 +19,17 @@ import net.openid.appauth.TokenRequest;
 import net.openid.appauth.TokenResponse;
 import net.openid.appauth.connectivity.ConnectionBuilder;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -97,6 +105,345 @@ public class AuthManager {
         // Add this to force external browser instead of Chrome Custom Tabs
         authIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         activity.startActivityForResult(authIntent, 100);
+    }
+
+    // ===================== IN-APP LOGIN (ROPC) =====================
+
+    /**
+     * Direct credential login using Keycloak's Resource Owner Password Credentials grant.
+     * No browser — stays fully inside the app.
+     */
+    public void loginWithCredentials(String email, String password, @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String tokenEndpoint = AuthConfig.TOKEN_ENDPOINT;
+                String body = "grant_type=password"
+                        + "&client_id=" + URLEncoder.encode(AuthConfig.CLIENT_ID, "UTF-8")
+                        + "&username=" + URLEncoder.encode(email, "UTF-8")
+                        + "&password=" + URLEncoder.encode(password, "UTF-8")
+                        + "&scope=" + URLEncoder.encode(AuthConfig.SCOPES, "UTF-8");
+
+                URL url = new URL(tokenEndpoint);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(body.getBytes(StandardCharsets.UTF_8));
+                }
+
+                int responseCode = conn.getResponseCode();
+                Log.d(TAG, "ROPC response code: " + responseCode);
+
+                InputStream is = (responseCode == 200)
+                        ? conn.getInputStream()
+                        : conn.getErrorStream();
+
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line);
+                }
+
+                String responseBody = sb.toString();
+                Log.d(TAG, "ROPC response: " + responseBody);
+
+                if (responseCode == 200) {
+                    JSONObject json = new JSONObject(responseBody);
+                    String accessToken  = json.optString("access_token", null);
+                    String refreshToken = json.optString("refresh_token", null);
+                    String idToken      = json.optString("id_token", null);
+                    long expiresIn      = json.optLong("expires_in", 3600);
+                    String tokenType    = json.optString("token_type", "Bearer");
+                    String userId       = JwtUtils.extractSub(idToken != null ? idToken : accessToken);
+
+                    tokenManager.saveTokens(accessToken, refreshToken, idToken,
+                            expiresIn, tokenType, userId);
+                    callback.onSuccess();
+                } else {
+                    String errorMsg = "Invalid credentials";
+                    try {
+                        JSONObject errJson = new JSONObject(responseBody);
+                        String desc = errJson.optString("error_description", null);
+                        if (desc != null && !desc.isEmpty()) errorMsg = desc;
+                    } catch (Exception ignored) {}
+                    callback.onError(errorMsg);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "ROPC login error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    // ===================== FORGOT PASSWORD (OTP-based) =====================
+
+    /** Step 1 – request a 6-digit OTP for the given email.  Passes send-quota info to the UI. */
+    public void sendForgotPasswordOtp(String email, @NonNull OtpSendCallback callback) {        new Thread(() -> {
+            try {
+                String json = "{\"email\":\"" + escape(email) + "\"}";
+                String url  = AuthConfig.API_BASE_URL + "/api/auth/forgot-password/send-otp";
+                HttpURLConnection conn = openJson(url, "POST");
+                writeBody(conn, json);
+                int    code = conn.getResponseCode();
+                String body = readBody(conn, code);
+                Log.d(TAG, "sendForgotPasswordOtp -> " + code + " : " + body);
+                if (code == 200 || code == 201) {
+                    JSONObject j = new JSONObject(body);
+                    if (j.optBoolean("success", true)) {
+                        int  sendCount = j.optInt("sendCount", 1);
+                        int  maxSends  = j.optInt("maxSends",  5);
+                        callback.onOtpSent(sendCount, maxSends);
+                    } else {
+                        callback.onError(j.optString("message", "Failed to send OTP"), 0, 0, 0);
+                    }
+                } else {
+                    // 429 → CooldownException or RateLimitExceededException
+                    JSONObject j    = new JSONObject(body);
+                    String  msg     = j.optString("message", "Too many requests");
+                    int  sendCount  = j.optInt("sendCount",  0);
+                    int  maxSends   = j.optInt("maxSends",   5);
+                    long retryAfter = j.optLong("retryAfterSeconds", 60);
+                    callback.onError(msg, sendCount, maxSends, retryAfter);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "sendForgotPasswordOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.", 0, 0, 0);
+            }
+        }).start();
+    }
+
+    /**
+     * Convenience overload for callers that don't need send-quota info (e.g. ProfileFragment).
+     * Delegates to {@link #sendForgotPasswordOtp(String, OtpSendCallback)}.
+     */
+    public void sendForgotPasswordOtp(String email, @NonNull AuthCallback callback) {
+        sendForgotPasswordOtp(email, new OtpSendCallback() {
+            @Override public void onOtpSent(int sendCount, int maxSends) { callback.onSuccess(); }
+            @Override public void onError(String msg, int s, int m, long r) { callback.onError(msg); }
+        });
+    }
+
+    /** Step 2 – verify the OTP; {@link OtpVerifyCallback#onSuccess(String)} receives the resetToken. */
+    public void verifyForgotPasswordOtp(String email, String otp,
+                                        @NonNull OtpVerifyCallback callback) {
+        new Thread(() -> {
+            try {
+                String json = "{\"email\":\"" + escape(email)
+                        + "\",\"otp\":\"" + escape(otp) + "\"}";
+                String url = AuthConfig.API_BASE_URL + "/api/auth/forgot-password/verify-otp";
+
+                HttpURLConnection conn = openJson(url, "POST");
+                writeBody(conn, json);
+                int code = conn.getResponseCode();
+                String body = readBody(conn, code);
+                Log.d(TAG, "verifyForgotPasswordOtp -> " + code + " : " + body);
+
+                if (code == 200) {
+                    JSONObject j = new JSONObject(body);
+                    boolean success = j.optBoolean("success", false);
+                    if (success) {
+                        String token = j.optString("resetToken", null);
+                        callback.onSuccess(token);
+                    } else {
+                        callback.onError(j.optString("message", "Invalid OTP"));
+                    }
+                } else {
+                    // 422: wrong OTP with attemptsRemaining, or expired/not-found
+                    JSONObject j = new JSONObject(body);
+                    String msg = j.optString("message", "Invalid or expired OTP");
+                    callback.onError(msg);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "verifyForgotPasswordOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    /** Step 3 – use the resetToken to set a new password. */
+    public void resetPassword(String resetToken, String newPassword,
+                              @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String json = "{\"resetToken\":\"" + escape(resetToken)
+                        + "\",\"newPassword\":\"" + escape(newPassword) + "\"}";
+                callApi(AuthConfig.API_BASE_URL + "/api/auth/forgot-password/reset",
+                        "POST", json, callback);
+            } catch (Exception e) {
+                Log.e(TAG, "resetPassword error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    // ===================== SIGNUP OTP =====================
+
+    /** Step 1 – send verification OTP before account creation (checks email + username availability). */
+    public void sendSignupOtp(String email, String firstName, String username,
+                              @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String json = "{\"email\":\"" + escape(email)
+                        + "\",\"firstName\":\"" + escape(firstName)
+                        + "\",\"username\":\"" + escape(username != null ? username : "") + "\"}";
+                callApi(AuthConfig.API_BASE_URL + "/api/auth/signup/send-otp",
+                        "POST", json, callback);
+            } catch (Exception e) {
+                Log.e(TAG, "sendSignupOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    /** Backward-compatible overload (no username — skips username availability check). */
+    public void sendSignupOtp(String email, String firstName, @NonNull AuthCallback callback) {
+        sendSignupOtp(email, firstName, "", callback);
+    }
+
+    /** Step 2 – verify the signup OTP before creating the account. */
+    public void verifySignupOtp(String email, String otp, @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String json = "{\"email\":\"" + escape(email)
+                        + "\",\"otp\":\"" + escape(otp) + "\"}";
+                callApi(AuthConfig.API_BASE_URL + "/api/auth/signup/verify-otp",
+                        "POST", json, callback);
+            } catch (Exception e) {
+                Log.e(TAG, "verifySignupOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    // ===================== EMAIL CHANGE VERIFICATION (OTP) =====================
+
+    /**
+     * Send a 6-digit OTP to {@code newEmail} before allowing the email update.
+     * Calls the authenticated {@code /api/users/{userId}/send-email-change-otp} endpoint,
+     * which first checks that the new email is not already registered.
+     */
+    public void sendEmailChangeOtp(String newEmail, String firstName,
+                                   @NonNull OtpSendCallback callback) {
+        new Thread(() -> {
+            try {
+                String userId      = tokenManager.getUserId();
+                String accessToken = tokenManager.getAccessToken();
+                String json = "{\"email\":\"" + escape(newEmail) + "\"}";
+                String url  = AuthConfig.API_BASE_URL + "/api/users/" + userId
+                        + "/send-email-change-otp";
+                HttpURLConnection conn = openJson(url, "POST");
+                conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+                writeBody(conn, json);
+                int    code = conn.getResponseCode();
+                String body = readBody(conn, code);
+                Log.d(TAG, "sendEmailChangeOtp -> " + code + " : " + body);
+                if (code == 200 || code == 201) {
+                    JSONObject j = new JSONObject(body);
+                    if (j.optBoolean("success", true)) {
+                        callback.onOtpSent(j.optInt("sendCount", 1), j.optInt("maxSends", 5));
+                    } else {
+                        callback.onError(j.optString("message", "Failed to send OTP"), 0, 0, 0);
+                    }
+                } else {
+                    JSONObject j = new JSONObject(body);
+                    callback.onError(
+                            j.optString("message", "Request failed"),
+                            j.optInt("sendCount", 0),
+                            j.optInt("maxSends", 5),
+                            j.optLong("retryAfterSeconds", 0));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "sendEmailChangeOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.", 0, 0, 0);
+            }
+        }).start();
+    }
+
+    /** Backward-compatible overload for callers that still use {@link AuthCallback}. */
+    public void sendEmailChangeOtp(String newEmail, String firstName,
+                                   @NonNull AuthCallback callback) {
+        sendEmailChangeOtp(newEmail, firstName, new OtpSendCallback() {
+            @Override public void onOtpSent(int s, int m) { callback.onSuccess(); }
+            @Override public void onError(String msg, int s, int m, long r) { callback.onError(msg); }
+        });
+    }
+
+    /**
+     * Verify the OTP sent to the new email address.
+     * Returns success if the OTP is valid — caller may then call updateUser.
+     */
+    public void verifyEmailChangeOtp(String newEmail, String otp,
+                                     @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String json = "{\"email\":\"" + escape(newEmail)
+                        + "\",\"otp\":\"" + escape(otp) + "\"}";
+                callApi(AuthConfig.API_BASE_URL + "/api/auth/signup/verify-otp",
+                        "POST", json, callback);
+            } catch (Exception e) {
+                Log.e(TAG, "verifyEmailChangeOtp error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
+    }
+
+    // ===================== FORGOT PASSWORD (legacy – kept for safety) =====================
+
+    /**
+     * @deprecated Use {@link #sendForgotPasswordOtp} instead.
+     */
+    @Deprecated
+    public void requestPasswordReset(String email, @NonNull AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                String apiUrl = AuthConfig.API_BASE_URL + "/api/auth/forgot-password";
+                String body   = "{\"email\":\"" + email.replace("\"", "\\\"") + "\"}";
+
+                URL url = new URL(apiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(body.getBytes(StandardCharsets.UTF_8));
+                }
+
+                int responseCode = conn.getResponseCode();
+                Log.d(TAG, "Forgot-password response code: " + responseCode);
+
+                if (responseCode == 200 || responseCode == 204) {
+                    callback.onSuccess();
+                } else {
+                    InputStream es = conn.getErrorStream();
+                    String errorMsg = "Failed to send reset email. Please try again.";
+                    if (es != null) {
+                        StringBuilder sb = new StringBuilder();
+                        try (BufferedReader br = new BufferedReader(
+                                new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                            String line;
+                            while ((line = br.readLine()) != null) sb.append(line);
+                        }
+                        try {
+                            JSONObject errJson = new JSONObject(sb.toString());
+                            String msg = errJson.optString("message", null);
+                            if (msg != null && !msg.isEmpty()) errorMsg = msg;
+                        } catch (Exception ignored) {}
+                    }
+                    callback.onError(errorMsg);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Forgot-password error: " + e.getMessage(), e);
+                callback.onError("Network error. Please check your connection.");
+            }
+        }).start();
     }
 
     // ===================== CALLBACK =====================
@@ -303,8 +650,103 @@ public class AuthManager {
         tokenManager.clearTokens();
     }
 
+    // ===================== PRIVATE HTTP HELPERS =====================
+
+    private HttpURLConnection openJson(String urlStr, String method) throws Exception {
+        URL url = new URL(urlStr);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod(method);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(15_000);
+        conn.setReadTimeout(15_000);
+        return conn;
+    }
+
+    private void writeBody(HttpURLConnection conn, String json) throws Exception {
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private String readBody(HttpURLConnection conn, int code) throws Exception {
+        InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+        if (is == null) return "";
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    private String extractMessage(String json, String fallback) {
+        try { return new JSONObject(json).optString("message", fallback); }
+        catch (Exception e) { return fallback; }
+    }
+
+    private String escape(String s) {
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * Generic POST helper – calls callback on main thread is NOT guaranteed;
+     * callers must use runOnUiThread as needed.
+     */
+    private void callApi(String urlStr, String method, String json,
+                         @NonNull AuthCallback callback) throws Exception {
+        HttpURLConnection conn = openJson(urlStr, method);
+        writeBody(conn, json);
+        int code = conn.getResponseCode();
+        String body = readBody(conn, code);
+        Log.d(TAG, "callApi " + urlStr + " -> " + code + " : " + body);
+        if (code == 200 || code == 201) {
+            JSONObject j = new JSONObject(body);
+            if (j.optBoolean("success", true)) {
+                callback.onSuccess();
+            } else {
+                callback.onError(j.optString("message", "Request failed"));
+            }
+        } else {
+            callback.onError(extractMessage(body, "Request failed (HTTP " + code + ")"));
+        }
+    }
+
+    // ===================== CALLBACK INTERFACES =====================
+
     public interface AuthCallback {
         void onSuccess();
+        void onError(String error);
+    }
+
+    /**
+     * Callback for OTP-send operations.
+     * Carries per-request send-quota data so the UI can show "X/Y OTP requests used".
+     */
+    public interface OtpSendCallback {
+        /**
+         * OTP was sent successfully.
+         *
+         * @param sendCount how many OTPs have been requested in the current 2-hour window
+         * @param maxSends  maximum allowed per window (usually 5)
+         */
+        void onOtpSent(int sendCount, int maxSends);
+
+        /**
+         * Request failed (rate-limited or network error).
+         *
+         * @param message          human-readable error from the server
+         * @param sendCount        requests used so far (0 if unavailable)
+         * @param maxSends         window limit (5 if unavailable)
+         * @param retryAfterSeconds seconds the user must wait before retrying; 0 = not rate-limited
+         */
+        void onError(String message, int sendCount, int maxSends, long retryAfterSeconds);
+    }
+
+    /** Returned by OTP verify endpoints — carries the single-use token on success. */
+    public interface OtpVerifyCallback {
+        void onSuccess(String token);
         void onError(String error);
     }
 

@@ -73,7 +73,31 @@ public class ActivityAdapter extends PagingDataAdapter<ActivityResponse, Activit
         }
     }
 
+    // ── shared emoji helper ──────────────────────────────────────────────────
+    public static String getActivityEmoji(String type) {
+        if (type == null) return "\uD83C\uDFC3";
+        switch (type.toUpperCase()) {
+            case "RUNNING":      return "\uD83C\uDFC3";
+            case "SWIMMING":     return "\uD83C\uDFCA";
+            case "WALKING":      return "\uD83D\uDEB6";
+            case "CYCLING":      return "\uD83D\uDEB4";
+            case "YOGA":         return "\uD83E\uDDD8";
+            case "WEIGHT_LIFTING": return "\uD83C\uDFCB\uFE0F";
+            case "BOXING":       return "\uD83E\uDD4A";
+            case "CARDIO":       return "\u2764\uFE0F";
+            case "STRETCHING":   return "\uD83E\uDD38";
+            default:             return "\uD83C\uDFC3";
+        }
+    }
+
+    public static String formatActivityName(String type) {
+        if (type == null) return "Activity";
+        String s = type.replace("_", " ").toLowerCase();
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
     static class ActivityViewHolder extends RecyclerView.ViewHolder {
+        private final TextView activityEmoji;
         private final TextView activityType;
         private final TextView duration;
         private final TextView calories;
@@ -81,6 +105,7 @@ public class ActivityAdapter extends PagingDataAdapter<ActivityResponse, Activit
 
         public ActivityViewHolder(@NonNull View itemView) {
             super(itemView);
+            activityEmoji = itemView.findViewById(R.id.activity_emoji);
             activityType = itemView.findViewById(R.id.activity_type);
             duration = itemView.findViewById(R.id.duration);
             calories = itemView.findViewById(R.id.calories);
@@ -88,7 +113,10 @@ public class ActivityAdapter extends PagingDataAdapter<ActivityResponse, Activit
         }
 
         public void bind(ActivityResponse activity, OnActivityClickListener listener) {
-            activityType.setText(activity.getActivityType());
+            if (activityEmoji != null) {
+                activityEmoji.setText(getActivityEmoji(activity.getActivityType()));
+            }
+            activityType.setText(formatActivityName(activity.getActivityType()));
             duration.setText(activity.getDuration() + " min");
             calories.setText(activity.getCaloriesBurned() + " kcal");
             startTime.setText(formatDateTime(activity.getStartTime()));

@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -21,7 +24,7 @@ import javax.inject.Inject;
 @AndroidEntryPoint
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = "SplashActivity";
-    private static final int SPLASH_DELAY_MS = 2000; // 2 seconds
+    private static final int SPLASH_DELAY_MS = 2200;
 
     @Inject
     TokenManager tokenManager;
@@ -34,10 +37,57 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        // Check authentication status after splash delay
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            checkAuthenticationStatus();
-        }, SPLASH_DELAY_MS);
+        animateSplash();
+
+        new Handler(Looper.getMainLooper()).postDelayed(
+                this::checkAuthenticationStatus, SPLASH_DELAY_MS);
+    }
+
+    private void animateSplash() {
+        View logo    = findViewById(R.id.splash_logo);
+        View title   = findViewById(R.id.splash_title);
+        View tagline = findViewById(R.id.splash_tagline);
+        View bottom  = findViewById(R.id.splash_bottom);
+
+        // 1. Logo: pop-scale from 0.5 → 1 + fade in
+        if (logo != null) {
+            logo.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(650)
+                    .setInterpolator(new OvershootInterpolator(1.1f))
+                    .start();
+        }
+
+        // 2. App name: slide up + fade in
+        if (title != null) {
+            title.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(350)
+                    .setDuration(450)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .start();
+        }
+
+        // 3. Tagline: gentle fade in
+        if (tagline != null) {
+            tagline.animate()
+                    .alpha(1f)
+                    .setStartDelay(600)
+                    .setDuration(350)
+                    .start();
+        }
+
+        // 4. Bottom bar: fade in last
+        if (bottom != null) {
+            bottom.animate()
+                    .alpha(1f)
+                    .setStartDelay(800)
+                    .setDuration(400)
+                    .start();
+        }
     }
 
     /**

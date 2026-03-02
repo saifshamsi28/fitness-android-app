@@ -68,10 +68,42 @@ public class ActivityDetailFragment extends Fragment {
     // Chart
     private MaterialCardView chartCard;
     private LineChart caloriesChart;
+    // Chart stats strip
+    private TextView chartCaloriesBadge;
+    private TextView chartStatDuration;
+    private TextView chartStatAvgRate;
+    private TextView chartStatTotal;
 
     // AI Recommendation Section
     private MaterialCardView recommendationCard;
     private TextView recommendationText;
+
+    // Section cards (hidden when empty)
+    private MaterialCardView improvementsCard;
+    private MaterialCardView suggestionsCard;
+    private MaterialCardView safetyCard;
+
+    // Collapsible headers
+    private LinearLayout improvementsHeader;
+    private LinearLayout suggestionsHeader;
+    private LinearLayout safetyHeader;
+
+    // Collapsible bodies
+    private LinearLayout improvementsBody;
+    private LinearLayout suggestionsBody;
+    private LinearLayout safetyBody;
+
+    // Chevrons
+    private TextView improvementsChevron;
+    private TextView suggestionsChevron;
+    private TextView safetyChevron;
+
+    // Item count labels
+    private TextView improvementsCount;
+    private TextView suggestionsCount;
+    private TextView safetyCount;
+
+    // Containers (populated dynamically)
     private LinearLayout improvementsContainer;
     private LinearLayout suggestionsContainer;
     private LinearLayout safetyContainer;
@@ -171,13 +203,42 @@ public class ActivityDetailFragment extends Fragment {
         // Chart
         chartCard = view.findViewById(R.id.chart_card);
         caloriesChart = view.findViewById(R.id.calories_chart);
+        chartCaloriesBadge = view.findViewById(R.id.chart_calories_badge);
+        chartStatDuration = view.findViewById(R.id.chart_stat_duration);
+        chartStatAvgRate = view.findViewById(R.id.chart_stat_avgrate);
+        chartStatTotal = view.findViewById(R.id.chart_stat_total);
 
         // Recommendation Section
         recommendationCard = view.findViewById(R.id.recommendation_card);
         recommendationText = view.findViewById(R.id.recommendation_text);
+
+        improvementsCard = view.findViewById(R.id.improvements_card);
+        suggestionsCard  = view.findViewById(R.id.suggestions_card);
+        safetyCard       = view.findViewById(R.id.safety_card);
+
+        improvementsHeader = view.findViewById(R.id.improvements_header);
+        suggestionsHeader  = view.findViewById(R.id.suggestions_header);
+        safetyHeader       = view.findViewById(R.id.safety_header);
+
+        improvementsBody = view.findViewById(R.id.improvements_body);
+        suggestionsBody  = view.findViewById(R.id.suggestions_body);
+        safetyBody       = view.findViewById(R.id.safety_body);
+
+        improvementsChevron = view.findViewById(R.id.improvements_chevron);
+        suggestionsChevron  = view.findViewById(R.id.suggestions_chevron);
+        safetyChevron       = view.findViewById(R.id.safety_chevron);
+
+        improvementsCount = view.findViewById(R.id.improvements_count);
+        suggestionsCount  = view.findViewById(R.id.suggestions_count);
+        safetyCount       = view.findViewById(R.id.safety_count);
+
         improvementsContainer = view.findViewById(R.id.improvements_container);
-        suggestionsContainer = view.findViewById(R.id.suggestions_container);
-        safetyContainer = view.findViewById(R.id.safety_container);
+        suggestionsContainer  = view.findViewById(R.id.suggestions_container);
+        safetyContainer       = view.findViewById(R.id.safety_container);
+
+        setupExpandCollapse(improvementsHeader, improvementsBody, improvementsChevron);
+        setupExpandCollapse(suggestionsHeader,  suggestionsBody,  suggestionsChevron);
+        setupExpandCollapse(safetyHeader,       safetyBody,       safetyChevron);
 
         // Error
         errorContainer = view.findViewById(R.id.error_container);
@@ -466,71 +527,106 @@ public class ActivityDetailFragment extends Fragment {
         }
 
         chartCard.setVisibility(View.VISIBLE);
-        caloriesChart.setHighlightPerTapEnabled(true);
 
+        int dur = activity.getDuration();
+        int cal = activity.getCaloriesBurned();
 
-        // Generate smooth calorie curve
-        List<Entry> entries = generateCalorieCurve(
-                activity.getDuration(),
-                activity.getCaloriesBurned()
-        );
+        // ── Populate bottom stats strip ───────────────────────────────
+        if (chartCaloriesBadge != null)  chartCaloriesBadge.setText(cal + " kcal");
+        if (chartStatDuration != null)   chartStatDuration.setText(dur + " min");
+        if (chartStatTotal != null)      chartStatTotal.setText(cal + " kcal");
+        if (chartStatAvgRate != null) {
+            float avg = (float) cal / dur;
+            chartStatAvgRate.setText(String.format(java.util.Locale.US, "%.1f", avg));
+        }
 
-        // Configure chart
-        LineDataSet dataSet = new LineDataSet(entries, "Calories Burned");
-        dataSet.setColor(getResources().getColor(R.color.primary, null));
-        dataSet.setLineWidth(3f);
+        // ── Build data ────────────────────────────────────────────────
+        List<Entry> entries = generateCalorieCurve(dur, cal);
+
+        LineDataSet dataSet = new LineDataSet(entries, "");
+        dataSet.setColor(Color.parseColor("#64B5F6"));
+        dataSet.setLineWidth(2.5f);
         dataSet.setDrawCircles(false);
         dataSet.setDrawValues(false);
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // Smooth curve
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         dataSet.setDrawFilled(true);
-        dataSet.setFillColor(getResources().getColor(R.color.primary_light, null));
-        dataSet.setFillAlpha(50);
+        dataSet.setFillColor(Color.parseColor("#1E88E5"));
+        dataSet.setFillAlpha(55);
+        dataSet.setHighlightEnabled(true);
+        dataSet.setHighLightColor(Color.parseColor("#FFB74D"));
+        dataSet.setHighlightLineWidth(1.5f);
 
         LineData lineData = new LineData(dataSet);
         caloriesChart.setData(lineData);
 
-        // Customize chart appearance
-        Description description = new Description();
-        description.setText("Calories vs Time");
-        description.setTextSize(12f);
-        caloriesChart.setDescription(description);
-
-        caloriesChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        caloriesChart.getXAxis().setGranularity(1f);
-        caloriesChart.getXAxis().setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                return ((int) value) + " min";
-            }
-        });
-
-
-        caloriesChart.getAxisRight().setEnabled(false);
-        caloriesChart.getAxisLeft().setAxisMinimum(0f);
-
-        caloriesChart.getLegend().setEnabled(false);
+        // ── Dark-mode chart styling ───────────────────────────────────
+        // Background transparent (card is dark)
+        caloriesChart.setBackgroundColor(Color.TRANSPARENT);
+        caloriesChart.setDrawGridBackground(false);
+        caloriesChart.setDrawBorders(false);
+        caloriesChart.setHighlightPerTapEnabled(true);
         caloriesChart.setTouchEnabled(true);
         caloriesChart.setDragEnabled(true);
         caloriesChart.setScaleEnabled(false);
 
+        // No description label
+        Description description = new Description();
+        description.setText("");
+        caloriesChart.setDescription(description);
 
-        float avgCalories = (float) calories / duration;
+        // Legend off
+        caloriesChart.getLegend().setEnabled(false);
 
-        LimitLine avgLine = new LimitLine(avgCalories, "Avg");
-        avgLine.setLineWidth(1.5f);
+        // X axis
+        XAxis xAxis = caloriesChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setTextColor(Color.parseColor("#80FFFFFF"));
+        xAxis.setTextSize(10f);
+        xAxis.setDrawGridLines(true);
+        xAxis.setGridColor(Color.parseColor("#15FFFFFF"));
+        xAxis.setAxisLineColor(Color.parseColor("#25FFFFFF"));
+        xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return ((int) value) + " m";
+            }
+        });
+
+        // Left Y axis
+        caloriesChart.getAxisLeft().setAxisMinimum(0f);
+        caloriesChart.getAxisLeft().setTextColor(Color.parseColor("#80FFFFFF"));
+        caloriesChart.getAxisLeft().setTextSize(10f);
+        caloriesChart.getAxisLeft().setDrawGridLines(true);
+        caloriesChart.getAxisLeft().setGridColor(Color.parseColor("#15FFFFFF"));
+        caloriesChart.getAxisLeft().setAxisLineColor(Color.parseColor("#25FFFFFF"));
+        caloriesChart.getAxisLeft().setDrawTopYLabelEntry(false);
+
+        // Right Y axis off
+        caloriesChart.getAxisRight().setEnabled(false);
+
+        // Avg calorie/min limit line
+        caloriesChart.getAxisLeft().removeAllLimitLines();
+        float avgCalPerMin = (float) cal / dur;
+        LimitLine avgLine = new LimitLine(avgCalPerMin * (dur / 2f), "Avg");
+        avgLine.setLineWidth(1f);
+        avgLine.setLineColor(Color.parseColor("#80FFB74D"));
+        avgLine.enableDashedLine(10f, 6f, 0f);
+        avgLine.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_TOP);
+        avgLine.setTextColor(Color.parseColor("#FFB74D"));
+        avgLine.setTextSize(9f);
         caloriesChart.getAxisLeft().addLimitLine(avgLine);
 
-
-        // Animate chart
-        caloriesChart.animateY(800);
+        // ── Animate ───────────────────────────────────────────────────
+        caloriesChart.animateY(900, com.github.mikephil.charting.animation.Easing.EaseInOutQuart);
         caloriesChart.invalidate();
 
-        // Fade in animation
+        // Fade-in the card
         chartCard.setAlpha(0f);
         chartCard.animate()
                 .alpha(1f)
-                .setDuration(400)
-                .setStartDelay(400)
+                .setDuration(450)
+                .setStartDelay(350)
                 .start();
     }
 
@@ -558,9 +654,14 @@ public class ActivityDetailFragment extends Fragment {
     }
 
     private void displayRecommendation(Recommendation rec) {
-        // Display the main AI recommendation text
+        // Display the main AI recommendation text (normalize spacing)
         if (rec.getRecommendation() != null && !rec.getRecommendation().isEmpty()) {
-            recommendationText.setText(rec.getRecommendation());
+            // Collapse 2+ consecutive blank lines → single newline, trim edges
+            String cleanText = rec.getRecommendation()
+                    .replaceAll("\\r\\n", "\n")
+                    .replaceAll("\\n{2,}", "\n")
+                    .trim();
+            recommendationText.setText(cleanText);
             recommendationText.setVisibility(View.VISIBLE);
 
             recommendationText.setAlpha(0f);
@@ -571,20 +672,24 @@ public class ActivityDetailFragment extends Fragment {
         }
 
         // Display improvements, suggestions, and safety tips
-        // Now with smart parsing of "Label: Description" format
-        displayBulletList(improvementsContainer, rec.getImprovements(), "✅");
-        displayBulletList(suggestionsContainer, rec.getSuggestions(), "💡");
-        displayBulletList(safetyContainer, rec.getSafety(), "⚠️");
+        displayBulletList(improvementsContainer, improvementsCard, improvementsCount, rec.getImprovements(), "I");
+        displayBulletList(suggestionsContainer,  suggestionsCard,  suggestionsCount,  rec.getSuggestions(),  "T");
+        displayBulletList(safetyContainer,       safetyCard,       safetyCount,       rec.getSafety(),       "S");
     }
 
-    private void displayBulletList(LinearLayout container, List<String> items, String emoji) {
+    private void displayBulletList(LinearLayout container, MaterialCardView sectionCard,
+                                    TextView countLabel, List<String> items, String sectionTag) {
         container.removeAllViews();
 
         if (items == null || items.isEmpty()) {
-            container.setVisibility(View.GONE);
+            if (sectionCard != null) sectionCard.setVisibility(View.GONE);
             return;
         }
 
+        if (sectionCard != null) sectionCard.setVisibility(View.VISIBLE);
+        if (countLabel != null) {
+            countLabel.setText(items.size() + (items.size() == 1 ? " item" : " items"));
+        }
         container.setVisibility(View.VISIBLE);
 
         for (int i = 0; i < items.size(); i++) {
@@ -624,25 +729,43 @@ public class ActivityDetailFragment extends Fragment {
             // ========================================
             // STEP 4: Set text content
             // ========================================
-            icon.setText(emoji);                   // ✅, 💡, or ⚠️
-            labelText.setText(label);              // "STROKE RATE" (bold, all-caps)
-            descriptionText.setText(description); // "Incorporate interval training..."
+            icon.setText("\u25CF");                // filled circle ● — no emoji
+            labelText.setText(label);
+            descriptionText.setText(description);
 
             // ========================================
-            // STEP 5: Apply color coding by emoji type
+            // STEP 5: Apply color coding by section
             // ========================================
             int color;
-            if (emoji.contains("✅")) {
-                color = Color.parseColor("#2ECC71"); // Green for improvements
-            } else if (emoji.contains("💡")) {
-                color = Color.parseColor("#F1C40F"); // Yellow for suggestions
-            } else if (emoji.contains("⚠️")) {
-                color = Color.parseColor("#E74C3C"); // Red for safety
-            } else {
-                color = Color.parseColor("#3498DB"); // Blue fallback
+            int colorLight;
+            if ("I".equals(sectionTag)) {          // Improvements — deep blue
+                color      = Color.parseColor("#1565C0");
+                colorLight = Color.parseColor("#E3F2FD");
+            } else if ("T".equals(sectionTag)) {   // Training Tips — teal
+                color      = Color.parseColor("#00695C");
+                colorLight = Color.parseColor("#E0F2F1");
+            } else if ("S".equals(sectionTag)) {   // Safety — warm amber
+                color      = Color.parseColor("#E65100");
+                colorLight = Color.parseColor("#FFF3E0");
+            } else {                               // Default — deep purple
+                color      = Color.parseColor("#4527A0");
+                colorLight = Color.parseColor("#EDE7F6");
             }
 
-            card.setStrokeColor(color);
+            // Set accent bar color
+            View accentBar = bulletCard.findViewById(R.id.accent_bar);
+            if (accentBar != null) accentBar.setBackgroundColor(color);
+
+            // Set icon circle background (light tint)
+            View iconCircle = bulletCard.findViewById(R.id.icon_circle);
+            if (iconCircle != null) {
+                android.graphics.drawable.GradientDrawable circleBg =
+                        new android.graphics.drawable.GradientDrawable();
+                circleBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                circleBg.setColor(colorLight);
+                iconCircle.setBackground(circleBg);
+            }
+
             icon.setTextColor(color);
             labelText.setTextColor(color);
 
@@ -682,6 +805,34 @@ public class ActivityDetailFragment extends Fragment {
         }
     }
 
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Expand / collapse helper
+    // ─────────────────────────────────────────────────────────────────────
+    private void setupExpandCollapse(LinearLayout header, LinearLayout body, TextView chevron) {
+        if (header == null || body == null) return;
+        header.setOnClickListener(v -> {
+            boolean isExpanded = body.getVisibility() == View.VISIBLE;
+            if (isExpanded) {
+                // Collapse with fade
+                body.animate()
+                        .alpha(0f)
+                        .setDuration(180)
+                        .withEndAction(() -> body.setVisibility(View.GONE))
+                        .start();
+                if (chevron != null) chevron.setText("\u25B6"); // ▶
+            } else {
+                // Expand with fade
+                body.setAlpha(0f);
+                body.setVisibility(View.VISIBLE);
+                body.animate()
+                        .alpha(1f)
+                        .setDuration(220)
+                        .start();
+                if (chevron != null) chevron.setText("\u25BC"); // ▼
+            }
+        });
+    }
 
     /**
      * Share workout summary

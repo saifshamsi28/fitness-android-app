@@ -7,12 +7,14 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.button.MaterialButton;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -45,10 +47,10 @@ public class AddActivityFragment extends Fragment {
 
     private ActivityViewModel activityViewModel;
     private Spinner activityTypeSpinner;
-    private EditText durationInput;
-    private EditText caloriesInput;
-    private Button submitButton;
-    private ProgressBar progressBar;
+    private TextInputEditText durationInput;
+    private TextInputEditText caloriesInput;
+    private MaterialButton submitButton;
+    private FrameLayout loadingOverlay;
 
 
     private static final String[] ACTIVITY_TYPES = {
@@ -70,7 +72,7 @@ public class AddActivityFragment extends Fragment {
         durationInput = view.findViewById(R.id.duration_input);
         caloriesInput = view.findViewById(R.id.calories_input);
         submitButton = view.findViewById(R.id.submit_button);
-        progressBar = view.findViewById(R.id.progressBar);
+        loadingOverlay = view.findViewById(R.id.loading_overlay);
 
 
         activityViewModel = new ViewModelProvider(this).get(ActivityViewModel.class);
@@ -110,8 +112,11 @@ public class AddActivityFragment extends Fragment {
             return;
         }
 
-        // Show loader and diable button
-        progressBar.setVisibility(View.VISIBLE);
+        // Show overlay loader
+        loadingOverlay.setVisibility(View.VISIBLE);
+        AlphaAnimation fadeIn = new AlphaAnimation(0f, 1f);
+        fadeIn.setDuration(200);
+        loadingOverlay.startAnimation(fadeIn);
         submitButton.setEnabled(false);
 
         String startTime;
@@ -140,8 +145,11 @@ public class AddActivityFragment extends Fragment {
         activityViewModel.trackActivity(request)
                 .observe(getViewLifecycleOwner(), response -> {
 
-                    // Hide loader and enable button
-                    progressBar.setVisibility(View.GONE);
+                    // Hide overlay loader
+                    AlphaAnimation fadeOut = new AlphaAnimation(1f, 0f);
+                    fadeOut.setDuration(150);
+                    loadingOverlay.startAnimation(fadeOut);
+                    loadingOverlay.setVisibility(View.GONE);
                     submitButton.setEnabled(true);
 
                     if (response != null) {

@@ -7,6 +7,8 @@ import androidx.paging.PagingData;
 import com.saif.fitnessapp.network.dto.ActivityRequest;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 
+import java.util.List;
+
 import dagger.hilt.android.lifecycle.HiltViewModel;
 
 import javax.inject.Inject;
@@ -35,5 +37,13 @@ public class ActivityViewModel extends ViewModel {
         return androidx.lifecycle.FlowLiveDataConversions.asLiveData(
                 activityRepository.getActivitiesFlow(userId)
         );
+    }
+
+    public LiveData<List<ActivityResponse>> getRecentActivities(String userId) {
+        return activityRepository.getRecentActivities(userId, 10);
+    }
+
+    public LiveData<List<ActivityResponse>> getAllActivitiesForSearch(String userId) {
+        return activityRepository.getAllActivitiesForSearch(userId);
     }
 }

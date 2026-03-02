@@ -57,13 +57,14 @@ public final class AuthConfig {
     // DYNAMIC URLS
     // ===============================
 
-    public static final String KEYCLOAK_BASE_URL = isEmulator()
-            ? BuildConfig.KEYCLOAK_EMULATOR_URL
-            : BuildConfig.KEYCLOAK_DEVICE_URL;
+    // Production URLs take priority; fall back to emulator/device detection for local dev
+    public static final String KEYCLOAK_BASE_URL = (!BuildConfig.KEYCLOAK_PRODUCTION_URL.isEmpty())
+            ? BuildConfig.KEYCLOAK_PRODUCTION_URL
+            : isEmulator() ? BuildConfig.KEYCLOAK_EMULATOR_URL : BuildConfig.KEYCLOAK_DEVICE_URL;
 
-    public static final String API_BASE_URL = isEmulator()
-            ? BuildConfig.API_EMULATOR_URL
-            : BuildConfig.API_DEVICE_URL;
+    public static final String API_BASE_URL = (!BuildConfig.API_PRODUCTION_URL.isEmpty())
+            ? BuildConfig.API_PRODUCTION_URL
+            : isEmulator() ? BuildConfig.API_EMULATOR_URL : BuildConfig.API_DEVICE_URL;
 
     public static final String REALM = BuildConfig.KEYCLOAK_REALM;
 

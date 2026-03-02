@@ -20,6 +20,9 @@ public class TokenManager {
     private static final String KEY_EXPIRES_IN = "expires_in";
     private static final String KEY_TOKEN_TYPE = "token_type";
     private static final String KEY_USER_ID = "user_id";
+    private static final String KEY_REMEMBER_ME = "remember_me";
+    private static final String KEY_SAVED_EMAIL = "saved_email";
+    private static final String KEY_SAVED_PASSWORD = "saved_password";
 
     // Buffer time before actual expiry to proactively refresh token (5 minutes)
     private static final long TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
@@ -123,5 +126,34 @@ public class TokenManager {
                 .remove(KEY_TOKEN_TYPE)
                 .remove(KEY_USER_ID)
                 .apply();
+    }
+
+    // ─── Remember Me ──────────────────────────────────────────────────────
+    public void saveCredentials(String email, String password) {
+        encryptedSharedPreferences.edit()
+                .putBoolean(KEY_REMEMBER_ME, true)
+                .putString(KEY_SAVED_EMAIL, email)
+                .putString(KEY_SAVED_PASSWORD, password)
+                .apply();
+    }
+
+    public void clearSavedCredentials() {
+        encryptedSharedPreferences.edit()
+                .putBoolean(KEY_REMEMBER_ME, false)
+                .remove(KEY_SAVED_EMAIL)
+                .remove(KEY_SAVED_PASSWORD)
+                .apply();
+    }
+
+    public boolean isRememberMe() {
+        return encryptedSharedPreferences.getBoolean(KEY_REMEMBER_ME, false);
+    }
+
+    public String getSavedEmail() {
+        return encryptedSharedPreferences.getString(KEY_SAVED_EMAIL, "");
+    }
+
+    public String getSavedPassword() {
+        return encryptedSharedPreferences.getString(KEY_SAVED_PASSWORD, "");
     }
 }

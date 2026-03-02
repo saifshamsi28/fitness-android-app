@@ -12,6 +12,9 @@ public class UserResponse {
     @SerializedName("email")
     private String email;
 
+    @SerializedName("username")
+    private String username;
+
     @SerializedName("firstName")
     private String firstName;
 
@@ -28,6 +31,7 @@ public class UserResponse {
     public String getId() { return id; }
     public String getKeycloakId() { return keycloakId; }
     public String getEmail() { return email; }
+    public String getUsername() { return username; }
     public String getFirstName() { return firstName; }
     public String getLastName() { return lastName; }
     public String getCreatedAt() { return createdAt; }

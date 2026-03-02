@@ -10,6 +10,8 @@ import com.saif.fitnessapp.network.ApiService;
 import com.saif.fitnessapp.network.dto.ActivityRequest;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import kotlinx.coroutines.flow.Flow;
@@ -60,5 +62,47 @@ public class ActivityRepository {
         ).getFlow();
     }
 
+    public LiveData<List<ActivityResponse>> getAllActivitiesForSearch(String userId) {
+        MutableLiveData<List<ActivityResponse>> liveData = new MutableLiveData<>();
+        apiService.getActivities(0, 100, userId).enqueue(new Callback<List<ActivityResponse>>() {
+            @Override
+            public void onResponse(Call<List<ActivityResponse>> call,
+                                   Response<List<ActivityResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    liveData.postValue(response.body());
+                } else {
+                    liveData.postValue(null);
+                }
+            }
 
+            @Override
+            public void onFailure(Call<List<ActivityResponse>> call, Throwable t) {
+                t.printStackTrace();
+                liveData.postValue(null);
+            }
+        });
+        return liveData;
+    }
+
+    public LiveData<List<ActivityResponse>> getRecentActivities(String userId, int count) {
+        MutableLiveData<List<ActivityResponse>> liveData = new MutableLiveData<>();
+        apiService.getActivities(0, count, userId).enqueue(new Callback<List<ActivityResponse>>() {
+            @Override
+            public void onResponse(Call<List<ActivityResponse>> call,
+                                   Response<List<ActivityResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    liveData.postValue(response.body());
+                } else {
+                    liveData.postValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ActivityResponse>> call, Throwable t) {
+                t.printStackTrace();
+                liveData.postValue(null);
+            }
+        });
+        return liveData;
+    }
 }

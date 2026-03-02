@@ -2,9 +2,12 @@ package com.saif.fitnessapp.network;
 
 import com.saif.fitnessapp.network.dto.ActivityRequest;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
+import com.saif.fitnessapp.network.dto.ApiResponse;
+import com.saif.fitnessapp.network.dto.ChangePasswordRequest;
 import com.saif.fitnessapp.network.dto.Recommendation;
 import com.saif.fitnessapp.network.dto.SignupRequest;
 import com.saif.fitnessapp.network.dto.SignupResponse;
+import com.saif.fitnessapp.network.dto.UpdateProfileRequest;
 import com.saif.fitnessapp.network.dto.UserResponse;
 
 import java.util.List;
@@ -13,6 +16,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -29,6 +33,12 @@ public interface ApiService {
 
     @GET("api/users/{userId}/validate")
     Call<Boolean> validateUser(@Path("userId") String userId);
+
+    @PUT("api/users/{userId}")
+    Call<UserResponse> updateUser(@Path("userId") String userId, @Body UpdateProfileRequest request);
+
+    @POST("api/users/{userId}/change-password")
+    Call<ApiResponse> changePassword(@Path("userId") String userId, @Body ChangePasswordRequest request);
 
     // --- ACTIVITY SERVICE APIs ---
 
