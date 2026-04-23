@@ -7,6 +7,8 @@ import androidx.paging.rxjava3.RxPagingSource;
 import com.saif.fitnessapp.network.ApiService;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import io.reactivex.rxjava3.core.Single;
@@ -43,6 +45,13 @@ public class ActivityPagingSource
 
                     if (response.isSuccessful() && response.body() != null) {
                         List<ActivityResponse> data = response.body();
+
+                        // Sort latest first by startTime (ISO-8601 → lexicographic desc)
+                        data.sort((a, b) -> {
+                            String ta = a.getStartTime() != null ? a.getStartTime() : "";
+                            String tb = b.getStartTime() != null ? b.getStartTime() : "";
+                            return tb.compareTo(ta);
+                        });
 
                         Integer prevKey = pageIndex == STARTING_PAGE_INDEX
                                 ? null

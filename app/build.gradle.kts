@@ -46,26 +46,26 @@ android {
         buildConfigField(
             "String",
             "KEYCLOAK_DEVICE_URL",
-            "\"${localProps["KEYCLOAK_DEVICE_URL"] ?: "http://10.163.19.205:8181"}\""
+            "\"${localProps["KEYCLOAK_DEVICE_URL"] ?: "http://10.163.3.176:8181"}\""
         )
 
         buildConfigField(
             "String",
             "API_DEVICE_URL",
-            "\"${localProps["API_DEVICE_URL"] ?: "http://10.163.19.205:8080"}\""
+            "\"${localProps["API_DEVICE_URL"] ?: "http://10.163.3.176:8080"}\""
         )
 
         // Production (Render) URLs — override emulator/device detection when set
         buildConfigField(
             "String",
             "KEYCLOAK_PRODUCTION_URL",
-            "\"${localProps["KEYCLOAK_PRODUCTION_URL"] ?: "https://fitness-keycloak-5jt3.onrender.com"}\""
+            "\"${localProps["KEYCLOAK_PRODUCTION_URL"] ?: "http://10.163.3.176:8181"}\""
         )
 
         buildConfigField(
             "String",
             "API_PRODUCTION_URL",
-            "\"${localProps["API_PRODUCTION_URL"] ?: "https://fitness-gateway.onrender.com"}\""
+            "\"${localProps["API_PRODUCTION_URL"] ?: "http://10.163.3.176:8080"}\""
         )
 
         // Common config

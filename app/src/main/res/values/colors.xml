@@ -49,4 +49,25 @@
     <color name="bg_section_header_amber">#FFF8E1</color>
     <color name="bg_section_header_red">#FFEBEE</color>
     <color name="chart_bg">#111827</color>
+
+    <!-- ── Themed card surface (white in light, dark in night) ── -->
+    <color name="surface_card">#FFFFFF</color>
+
+    <!-- ── AI Insight card specific (overridden in values-night) ── -->
+    <color name="ai_title_text">#1A237E</color>
+    <color name="ai_body_text">#37474F</color>
+    <color name="ai_card_divider">#EEF2F8</color>
+    <color name="ai_card_stroke">#DCE8FA</color>
+    <color name="ai_badge_bg">#E3F2FD</color>
+    <color name="ai_badge_text">#1565C0</color>
+    <color name="ai_subtitle_text">#78909C</color>
+
+    <!-- ── Section dividers inside expandable cards ── -->
+    <color name="section_blue_divider">#E3F2FD</color>
+    <color name="section_teal_divider">#E0F2F1</color>
+    <color name="section_amber_divider">#FFF3E0</color>
+
+    <!-- ── Show-more expand row ── -->
+    <color name="expand_row_bg">#F5F8FF</color>
+    <color name="expand_row_text">#1565C0</color>
 </resources>

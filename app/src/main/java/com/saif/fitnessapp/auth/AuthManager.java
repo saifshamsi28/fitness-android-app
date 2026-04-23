@@ -546,9 +546,19 @@ public class AuthManager {
                         Log.e(TAG, "Token refresh failed: " + tokenEx.error);
                         Log.e(TAG, "Error description: " + tokenEx.errorDescription);
 
-                        // If refresh token is invalid/expired, clear all tokens
-                        // User will need to login again
-                        tokenManager.clearTokens();
+                        // Only clear tokens for actual OAuth authentication errors
+                        // (e.g. invalid_grant = refresh token genuinely expired/revoked).
+                        // TYPE_OAUTH_TOKEN_ERROR (type==2) means the server explicitly
+                        // rejected the token. TYPE_GENERAL_ERROR (type==0) means a
+                        // network/IO failure — the server was just unreachable (Render
+                        // free-tier sleep). In that case keep the tokens so the user
+                        // can still enter the app and retry later.
+                        if (tokenEx.type == net.openid.appauth.AuthorizationException.TYPE_OAUTH_TOKEN_ERROR) {
+                            Log.e(TAG, "OAuth token error — clearing tokens, user must re-login");
+                            tokenManager.clearTokens();
+                        } else {
+                            Log.w(TAG, "Network/general error during refresh — keeping tokens");
+                        }
                         callback.onRefreshFailed(tokenEx.errorDescription != null ?
                                 tokenEx.errorDescription : "Token refresh failed");
                         return;

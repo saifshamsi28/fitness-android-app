@@ -1,15 +1,17 @@
 package com.saif.fitnessapp.ui.home;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import android.os.Bundle;
 import androidx.navigation.Navigation;
 
 import com.facebook.shimmer.ShimmerFrameLayout;
@@ -21,6 +23,7 @@ import com.saif.fitnessapp.auth.TokenManager;
 import com.saif.fitnessapp.network.dto.ActivityResponse;
 import com.saif.fitnessapp.ui.TitleController;
 import com.saif.fitnessapp.user.UserViewModel;
+import com.saif.fitnessapp.utils.ThemeManager;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -66,6 +69,10 @@ public class HomeFragment extends Fragment {
     // Reset per-view so stopShimmer() fires correctly every time the view is (re)created
     private boolean activitiesLoaded = false;
 
+    // Fallback: stop shimmer after 20 s even if API never responds
+    private final Handler shimmerTimeoutHandler = new Handler(Looper.getMainLooper());
+    private Runnable shimmerTimeoutRunnable;
+
     private static final String[] MOTIVATIONAL_QUOTES = {
             "Every workout is progress. Keep pushing!",
             "The only bad workout is the one that didn't happen.",
@@ -104,6 +111,18 @@ public class HomeFragment extends Fragment {
         recentActivitiesContainer = view.findViewById(R.id.recent_activities_container);
         emptyActivitiesCard = view.findViewById(R.id.empty_activities_card);
 
+        // ── Theme toggle button (moon / sun icon) ──
+        ImageButton btnThemeToggle = view.findViewById(R.id.btn_theme_toggle);
+        if (btnThemeToggle != null) {
+            updateThemeIcon(btnThemeToggle);
+            btnThemeToggle.setOnClickListener(v -> {
+                ThemeManager.toggle(requireContext());
+                // Activity will recreate automatically after setDefaultNightMode;
+                // update icon immediately for a smooth feel before recreate.
+                updateThemeIcon(btnThemeToggle);
+            });
+        }
+
         // Shimmer + content containers
         shimmerHome = view.findViewById(R.id.shimmer_home);
         statsRow = view.findViewById(R.id.stats_row);
@@ -114,6 +133,17 @@ public class HomeFragment extends Fragment {
 
         // Start shimmer animation while data loads
         shimmerHome.startShimmer();
+
+        // Safety net: if backend never responds in 20 s, stop shimmer and show empty state
+        shimmerTimeoutRunnable = () -> {
+            if (!activitiesLoaded && shimmerHome != null) {
+                activitiesLoaded = true;
+                stopShimmer();
+                if (emptyActivitiesCard != null) emptyActivitiesCard.setVisibility(View.VISIBLE);
+                if (recentActivitiesContainer != null) recentActivitiesContainer.setVisibility(View.GONE);
+            }
+        };
+        shimmerTimeoutHandler.postDelayed(shimmerTimeoutRunnable, 20_000);
 
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
         activityViewModel = new ViewModelProvider(this).get(ActivityViewModel.class);
@@ -170,6 +200,19 @@ public class HomeFragment extends Fragment {
         motivationText.setText(MOTIVATIONAL_QUOTES[index]);
     }
 
+    /**
+     * Sets the toggle button icon to reflect the NEXT action:
+     *  - Moon icon  → currently light mode  → "click to go dark"
+     *  - Sun icon   → currently dark mode   → "click to go light"
+     */
+    private void updateThemeIcon(ImageButton btn) {
+        if (ThemeManager.isDark(requireContext())) {
+            btn.setImageResource(R.drawable.ic_light_mode);  // show SUN  (switch to light)
+        } else {
+            btn.setImageResource(R.drawable.ic_dark_mode);   // show MOON (switch to dark)
+        }
+    }
+
     private void loadUserProfile(String userId) {
         userViewModel.getUserProfile(userId).observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
@@ -191,6 +234,8 @@ public class HomeFragment extends Fragment {
 
     private void loadRecentActivities(String userId) {
         activityViewModel.getRecentActivities(userId).observe(getViewLifecycleOwner(), activities -> {
+            // Cancel the fallback timeout — real data (or error) arrived
+            shimmerTimeoutHandler.removeCallbacks(shimmerTimeoutRunnable);
             // Always stop shimmer when data arrives (flag guards double-stop on same view)
             if (!activitiesLoaded) {
                 activitiesLoaded = true;
@@ -335,6 +380,22 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
+    public void onDestroyView() {
+        // Cancel any pending shimmer timeout BEFORE super.onDestroyView() so the
+        // runnable cannot fire after the view lifecycle ends and touch null views.
+        if (shimmerTimeoutRunnable != null) {
+            shimmerTimeoutHandler.removeCallbacks(shimmerTimeoutRunnable);
+        }
+        // Null view refs before super so any late callbacks see null and bail
+        shimmerHome = null;
+        statsRow = null;
+        homeContentSection = null;
+        recentActivitiesContainer = null;
+        emptyActivitiesCard = null;
+        super.onDestroyView();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         if (requireActivity() instanceof TitleController) {
@@ -344,6 +405,7 @@ public class HomeFragment extends Fragment {
         String userId = tokenManager.getUserId();
         if (userId != null && activitiesLoaded) {
             activityViewModel.getRecentActivities(userId).observe(getViewLifecycleOwner(), activities -> {
+                if (emptyActivitiesCard == null || recentActivitiesContainer == null) return;
                 if (activities != null && !activities.isEmpty()) {
                     displayStats(activities);
                     displayRecentActivities(activities);

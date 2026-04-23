@@ -6,6 +6,8 @@
         <item name="colorSecondary">@color/secondary</item>
         <item name="colorSecondaryVariant">@color/secondary_dark</item>
         <item name="android:colorBackground">@color/background</item>
+        <!-- colorSurface drives MaterialCardView default background in DayNight -->
+        <item name="colorSurface">@color/surface_card</item>
         <item name="android:statusBarColor">@color/primary</item>
         <item name="android:navigationBarColor">@color/background</item>
     </style>

@@ -29,7 +29,14 @@ public class RecommendationRepository {
             @Override
             public void onResponse(Call<List<Recommendation>> call, Response<List<Recommendation>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    liveData.postValue(response.body());
+                    List<Recommendation> list = response.body();
+                    // Sort latest first by createdAt (ISO-8601 → lexicographic desc)
+                    list.sort((a, b) -> {
+                        String ta = a.getCreatedAt() != null ? a.getCreatedAt() : "";
+                        String tb = b.getCreatedAt() != null ? b.getCreatedAt() : "";
+                        return tb.compareTo(ta);
+                    });
+                    liveData.postValue(list);
                 } else {
                     liveData.postValue(null);
                 }

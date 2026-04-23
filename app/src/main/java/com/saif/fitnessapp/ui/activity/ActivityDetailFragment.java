@@ -3,6 +3,9 @@ package com.saif.fitnessapp.ui.activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -77,6 +80,10 @@ public class ActivityDetailFragment extends Fragment {
     // AI Recommendation Section
     private MaterialCardView recommendationCard;
     private TextView recommendationText;
+    // Expand/collapse for the AI insight body text
+    private LinearLayout aiRecExpandRow;
+    private TextView aiRecExpandLabel;
+    private boolean aiRecExpanded = false;
 
     // Section cards (hidden when empty)
     private MaterialCardView improvementsCard;
@@ -211,6 +218,8 @@ public class ActivityDetailFragment extends Fragment {
         // Recommendation Section
         recommendationCard = view.findViewById(R.id.recommendation_card);
         recommendationText = view.findViewById(R.id.recommendation_text);
+        aiRecExpandRow   = view.findViewById(R.id.ai_rec_expand_row);
+        aiRecExpandLabel = view.findViewById(R.id.ai_rec_expand_label);
 
         improvementsCard = view.findViewById(R.id.improvements_card);
         suggestionsCard  = view.findViewById(R.id.suggestions_card);
@@ -669,6 +678,18 @@ public class ActivityDetailFragment extends Fragment {
                     .alpha(1f)
                     .setDuration(400)
                     .start();
+
+            // Once laid out, show expand row only if text exceeds 4 lines
+            recommendationText.post(() -> {
+                if (!isAdded() || aiRecExpandRow == null) return;
+                if (recommendationText.getLineCount() > 4) {
+                    aiRecExpanded = false;
+                    aiRecExpandRow.setVisibility(View.VISIBLE);
+                    aiRecExpandRow.setOnClickListener(v -> toggleAiRecExpansion());
+                } else {
+                    aiRecExpandRow.setVisibility(View.GONE);
+                }
+            });
         }
 
         // Display improvements, suggestions, and safety tips
@@ -805,6 +826,32 @@ public class ActivityDetailFragment extends Fragment {
         }
     }
 
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Expand / collapse helper for the AI insight body text
+    // (AnimoTransition gives the same slide-in effect as recommendation cards)
+    // ─────────────────────────────────────────────────────────────────────
+    private void toggleAiRecExpansion() {
+        if (aiRecExpandRow == null || aiRecExpandLabel == null) return;
+        aiRecExpanded = !aiRecExpanded;
+
+        // Animate the height change of the parent card
+        View parent = (View) recommendationText.getParent();
+        if (parent instanceof ViewGroup) {
+            TransitionManager.beginDelayedTransition((ViewGroup) parent,
+                    new AutoTransition().setDuration(250));
+        }
+
+        if (aiRecExpanded) {
+            recommendationText.setMaxLines(Integer.MAX_VALUE);
+            recommendationText.setEllipsize(null);
+            aiRecExpandLabel.setText("Show less \u25B2");
+        } else {
+            recommendationText.setMaxLines(4);
+            recommendationText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            aiRecExpandLabel.setText("Show more \u25BC");
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     // Expand / collapse helper

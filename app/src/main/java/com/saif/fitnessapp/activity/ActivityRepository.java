@@ -69,7 +69,14 @@ public class ActivityRepository {
             public void onResponse(Call<List<ActivityResponse>> call,
                                    Response<List<ActivityResponse>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    liveData.postValue(response.body());
+                    List<ActivityResponse> list = response.body();
+                    // Sort latest first
+                    list.sort((a, b) -> {
+                        String ta = a.getStartTime() != null ? a.getStartTime() : "";
+                        String tb = b.getStartTime() != null ? b.getStartTime() : "";
+                        return tb.compareTo(ta);
+                    });
+                    liveData.postValue(list);
                 } else {
                     liveData.postValue(null);
                 }

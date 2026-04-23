@@ -15,7 +15,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import com.facebook.shimmer.ShimmerFrameLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.saif.fitnessapp.R;
 import com.saif.fitnessapp.activity.ActivityViewModel;
@@ -26,6 +27,11 @@ import com.saif.fitnessapp.ui.TitleController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import androidx.paging.CombinedLoadStates;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -39,8 +45,13 @@ public class ActivityFragment extends Fragment {
 
     private ActivityViewModel activityViewModel;
     private RecyclerView recyclerView;
-    private SwipeRefreshLayout swipeRefreshLayout;
+    private FloatingActionButton fabRefresh;
+    private ShimmerFrameLayout shimmerActivities;
+    private boolean shimmerDone = false;
     private ActivityAdapter adapter;
+
+    // Load state listener reference — kept so we can remove it in onDestroyView
+    private Function1<CombinedLoadStates, Unit> loadStateListener;
 
     // Search components
     private SearchView searchView;
@@ -61,9 +72,11 @@ public class ActivityFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        recyclerView        = view.findViewById(R.id.activities_recycler);
-        swipeRefreshLayout  = view.findViewById(R.id.swipe_refresh);
-        searchView          = view.findViewById(R.id.search_view);
+        recyclerView      = view.findViewById(R.id.activities_recycler);
+        fabRefresh        = view.findViewById(R.id.fab_refresh);
+        shimmerActivities = view.findViewById(R.id.shimmer_activities);
+        shimmerDone       = false;
+        searchView        = view.findViewById(R.id.search_view);
         searchResultsRecycler = view.findViewById(R.id.search_results_recycler);
         searchEmptyState    = view.findViewById(R.id.search_empty_state);
 
@@ -101,14 +114,26 @@ public class ActivityFragment extends Fragment {
 
         adapter.setOnActivityClickListener(this::navigateToActivityDetail);
 
-        adapter.addLoadStateListener(loadStates -> {
-            boolean isRefreshing =
-                    loadStates.getRefresh() instanceof androidx.paging.LoadState.Loading;
-            swipeRefreshLayout.setRefreshing(isRefreshing);
-            return null;
-        });
+        if (shimmerActivities != null) shimmerActivities.startShimmer();
 
-        swipeRefreshLayout.setOnRefreshListener(() -> adapter.refresh());
+        loadStateListener = loadStates -> {
+            // Guard: view may be destroyed before this fires
+            if (shimmerActivities == null) return Unit.INSTANCE;
+            boolean loading = loadStates.getRefresh() instanceof androidx.paging.LoadState.Loading;
+            if (!loading && !shimmerDone) {
+                // First successful load — hide skeleton, reveal list
+                shimmerDone = true;
+                shimmerActivities.stopShimmer();
+                shimmerActivities.setVisibility(View.GONE);
+                recyclerView.setVisibility(View.VISIBLE);
+            }
+            return Unit.INSTANCE;
+        };
+        adapter.addLoadStateListener(loadStateListener);
+
+        fabRefresh.setOnClickListener(v -> {
+            if (adapter != null) adapter.refresh();
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -156,13 +181,14 @@ public class ActivityFragment extends Fragment {
         }
 
         showSearchMode();
+        if (searchResultsRecycler == null || searchEmptyState == null) return;
         if (results.isEmpty()) {
             searchResultsRecycler.setVisibility(View.GONE);
             searchEmptyState.setVisibility(View.VISIBLE);
         } else {
             searchEmptyState.setVisibility(View.GONE);
             searchResultsRecycler.setVisibility(View.VISIBLE);
-            searchResultAdapter.setItems(results);
+            if (searchResultAdapter != null) searchResultAdapter.setItems(results);
         }
     }
 
@@ -186,13 +212,17 @@ public class ActivityFragment extends Fragment {
     }
 
     private void showBrowseMode() {
-        swipeRefreshLayout.setVisibility(View.VISIBLE);
-        searchResultsRecycler.setVisibility(View.GONE);
-        searchEmptyState.setVisibility(View.GONE);
+        if (recyclerView == null) return;
+        recyclerView.setVisibility(View.VISIBLE);
+        if (fabRefresh != null) fabRefresh.setVisibility(View.VISIBLE);
+        if (searchResultsRecycler != null) searchResultsRecycler.setVisibility(View.GONE);
+        if (searchEmptyState != null) searchEmptyState.setVisibility(View.GONE);
     }
 
     private void showSearchMode() {
-        swipeRefreshLayout.setVisibility(View.GONE);
+        if (recyclerView == null) return;
+        recyclerView.setVisibility(View.GONE);
+        if (fabRefresh != null) fabRefresh.setVisibility(View.GONE);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -279,6 +309,37 @@ public class ActivityFragment extends Fragment {
                 date     = itemView.findViewById(R.id.start_time);
             }
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        // IMPORTANT: null views and remove the listener BEFORE super.onDestroyView().
+        // super.onDestroyView() ends the ViewLifecycleOwner, which causes Paging to fire
+        // a final load-state callback. If the listener is still registered at that moment
+        // and swipeRefreshLayout is non-null, we crash. Nulling first lets the guard fire.
+        if (searchView != null) {
+            searchView.setOnQueryTextListener(null);
+            searchView = null;
+        }
+        if (fabRefresh != null) {
+            fabRefresh.setOnClickListener(null);
+            fabRefresh = null;
+        }
+        // Null shimmer FIRST so the load-state guard fires before super ends the lifecycle
+        if (shimmerActivities != null) {
+            shimmerActivities.stopShimmer();
+            shimmerActivities = null;
+        }
+        if (adapter != null && loadStateListener != null) {
+            adapter.removeLoadStateListener(loadStateListener);
+            loadStateListener = null;
+        }
+        recyclerView = null;
+        searchResultsRecycler = null;
+        searchEmptyState = null;
+        searchResultAdapter = null;
+        adapter = null;
+        super.onDestroyView();
     }
 
     @Override

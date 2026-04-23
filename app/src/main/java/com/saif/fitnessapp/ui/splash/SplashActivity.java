@@ -135,9 +135,17 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void onRefreshFailed(String error) {
                 Log.e(TAG, "Token refresh failed: " + error);
-                Log.d(TAG, "User needs to login again");
-                // Refresh token expired or invalid, user needs to login
-                runOnUiThread(() -> navigateToLogin());
+                // If our tokens were NOT cleared it means the failure was a network
+                // error (e.g. Keycloak on Render is cold-starting). The user is still
+                // logically authenticated — let them into the app. API calls will
+                // succeed once the server wakes up.
+                if (tokenManager.isLoggedIn()) {
+                    Log.w(TAG, "Network error during refresh but tokens intact — navigating to main");
+                    runOnUiThread(() -> navigateToMain());
+                } else {
+                    Log.d(TAG, "Refresh token invalid/expired — user must re-login");
+                    runOnUiThread(() -> navigateToLogin());
+                }
             }
         });
     }

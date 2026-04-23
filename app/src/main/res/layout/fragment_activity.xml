@@ -12,7 +12,7 @@
         android:id="@+id/search_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
+        android:background="@color/background"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="10dp"
@@ -36,24 +36,43 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Paging browse mode (default visible) -->
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh"
+        <!-- Shimmer skeleton shown while first page loads -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmer_activities"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:paddingTop="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:visibility="visible">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/activities_recycler"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingTop="12dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="20dp"
-                tools:listitem="@layout/item_activity" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                <include layout="@layout/layout_shimmer_activity_row" />
+                <include layout="@layout/layout_shimmer_activity_row" />
+                <include layout="@layout/layout_shimmer_activity_row" />
+                <include layout="@layout/layout_shimmer_activity_row" />
+                <include layout="@layout/layout_shimmer_activity_row" />
+
+            </LinearLayout>
+
+        </com.facebook.shimmer.ShimmerFrameLayout>
+
+        <!-- Paging browse mode (hidden until shimmer stops) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/activities_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:clipToPadding="false"
+            android:paddingTop="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="80dp"
+            tools:listitem="@layout/item_activity" />
 
         <!-- Search results mode (visible while query is active) -->
         <androidx.recyclerview.widget.RecyclerView
@@ -101,6 +120,18 @@
                 android:layout_marginTop="8dp" />
 
         </LinearLayout>
+
+        <!-- Refresh FAB — bottom right -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:contentDescription="Refresh activities"
+            app:srcCompat="@drawable/ic_refresh"
+            app:fabSize="mini"
+            app:backgroundTint="@color/primary" />
 
     </FrameLayout>
 

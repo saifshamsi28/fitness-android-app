@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- =======================================================
+         NIGHT MODE OVERRIDES — these replace values/colors.xml
+         in dark mode automatically (DayNight theme mechanism)
+         ======================================================= -->
+
+    <!-- Backgrounds -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+
+    <!-- Text -->
+    <color name="text_primary">#E8EAED</color>
+    <color name="text_secondary">#9AA0A6</color>
+    <color name="text_disabled">#4A4A4A</color>
+
+    <!-- Card tints — dark versions of the pastel cards -->
+    <color name="card_blue_light">#0D1F3A</color>
+    <color name="card_green_light">#0A1F0A</color>
+    <color name="card_orange_light">#2A1500</color>
+    <color name="card_purple_light">#1A0F2A</color>
+
+    <!-- Divider -->
+    <color name="divider">#2E2E2E</color>
+
+    <!-- Neutral grays -->
+    <color name="gray_light">#2A2A2A</color>
+    <color name="gray_medium">#5F5F5F</color>
+
+    <!-- Section header tints for activity detail -->
+    <color name="bg_section_header_green">#0A1F10</color>
+    <color name="bg_section_header_amber">#2A1800</color>
+    <color name="bg_section_header_red">#2A0F0F</color>
+
+    <!-- AI Insight card specific colors -->
+    <color name="surface_card">#1E1E1E</color>
+    <color name="ai_title_text">#90CAF9</color>
+    <color name="ai_body_text">#CFD8DC</color>
+    <color name="ai_card_divider">#1A2744</color>
+    <color name="ai_card_stroke">#1A2744</color>
+    <color name="ai_badge_bg">#0D1F3A</color>
+    <color name="ai_badge_text">#64B5F6</color>
+    <color name="ai_subtitle_text">#9AA0A6</color>
+
+    <!-- Section dividers inside expandable cards -->
+    <color name="section_blue_divider">#0D1F3A</color>
+    <color name="section_teal_divider">#0A2420</color>
+    <color name="section_amber_divider">#2A1500</color>
+
+    <!-- Show more expand row -->
+    <color name="expand_row_bg">#252525</color>
+    <color name="expand_row_text">#90CAF9</color>
+</resources>

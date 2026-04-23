@@ -142,6 +142,7 @@ public class ProfileFragment extends Fragment {
                 shimmerProfile.stopShimmer();
                 shimmerProfile.setVisibility(View.GONE);
                 profileRealContent.setVisibility(View.VISIBLE);
+                logoutButton.setVisibility(View.VISIBLE);
             }
             progressBar.setVisibility(View.GONE);
             if (user != null) {
